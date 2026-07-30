@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://etherialagency.com/sitemap.xml
