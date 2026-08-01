@@ -11,135 +11,179 @@
     <link rel="icon" href="/assets/landing/etherial-logo.png" />
     <style>
       @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-      :root { --ink:#f7f5f3; --muted:#b7b1b6; --line:rgba(255,255,255,.14); --bg:#080608; --rose:#ff4d72; --amber:#ffb655; }
+      :root { --ink:#f5f2f3; --mute:#aaa3a7; --bg:#070708; --panel:#0e0e11; --line:rgba(255,255,255,.13); --pink:#ff5478; --violet:#8d7cff; --silver:#d8d8de; }
       * { box-sizing:border-box; }
       html { scroll-behavior:smooth; background:var(--bg); }
-      body { margin:0; color:var(--ink); background:radial-gradient(circle at 80% 8%,rgba(128,43,78,.26),transparent 25%),var(--bg); font-family:'Space Grotesk',Arial,sans-serif; }
+      body { margin:0; background:var(--bg); color:var(--ink); font-family:'Space Grotesk',Arial,sans-serif; overflow-x:hidden; }
+      body:before { content:''; pointer-events:none; position:fixed; inset:0; z-index:20; opacity:.055; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.65'/%3E%3C/svg%3E"); }
       a { color:inherit; text-decoration:none; }
-      .wrap { width:min(1160px,calc(100% - 40px)); margin:auto; }
-      nav { display:flex; justify-content:space-between; align-items:center; padding:24px 0; border-bottom:1px solid var(--line); }
-      .brand { display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.02em; }
-      .brand img { width:34px; height:34px; object-fit:contain; }
-      .brand small,.eyebrow { color:var(--rose); font:500 11px 'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
-      .button { display:inline-flex; align-items:center; justify-content:center; padding:12px 17px; border:1px solid var(--ink); border-radius:999px; font-weight:600; transition:.2s ease; }
-      .button:hover { background:var(--ink); color:var(--bg); }
-      .button.primary { color:#120b0d; background:var(--rose); border-color:var(--rose); }
-      .button.primary:hover { transform:translateY(-2px); background:#ff7792; }
-      .hero { min-height:680px; display:grid; grid-template-columns:1.08fr .92fr; align-items:center; gap:36px; padding:78px 0 96px; }
-      h1 { font-size:clamp(3.5rem,8vw,7.2rem); letter-spacing:-.075em; line-height:.9; margin:18px 0 26px; max-width:790px; }
-      h2 { font-size:clamp(2rem,4.2vw,4rem); letter-spacing:-.055em; line-height:.98; margin:12px 0 18px; }
-      h3 { margin:0 0 8px; font-size:1.25rem; }
-      .lead { font-size:clamp(1.07rem,1.7vw,1.35rem); line-height:1.6; max-width:635px; color:#ded8dd; }
-      .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:30px; }
-      .hero-art { min-height:500px; position:relative; overflow:hidden; border:1px solid var(--line); border-radius:24px; background:#191216; }
-      .hero-art img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; opacity:.86; }
-      .hero-art:after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 25%,rgba(5,3,5,.85)); }
-      .hero-art p { position:absolute; z-index:1; bottom:20px; left:22px; right:22px; margin:0; font:500 11px 'DM Mono',monospace; line-height:1.55; color:#f8dee5; }
-      section { padding:96px 0; border-top:1px solid var(--line); }
-      .split { display:grid; grid-template-columns:.85fr 1.15fr; gap:72px; }
-      .copy { font-size:1.13rem; color:var(--muted); line-height:1.68; }
-      .principles { display:grid; gap:14px; margin-top:26px; }
-      .principle { padding:18px 0; border-top:1px solid var(--line); font-size:1.04rem; line-height:1.45; }
-      .principle strong { display:block; margin-bottom:5px; color:var(--ink); }
-      .roster { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:40px; }
-      .creator { min-height:420px; position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--line); background:#242024; }
-      .creator img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .45s ease; }
-      .creator:hover img { transform:scale(1.05); }
-      .creator:after { content:''; position:absolute; inset:0; background:linear-gradient(transparent 35%,rgba(0,0,0,.84)); }
-      .creator div { position:absolute; z-index:1; bottom:18px; left:17px; right:17px; }
-      .creator span { color:#d5cbd0; font:400 11px 'DM Mono',monospace; }
-      .creator p { margin:4px 0 0; color:#fff; font-size:.94rem; line-height:1.35; }
-      .model { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-top:38px; }
-      .card { padding:25px; min-height:210px; border:1px solid var(--line); border-radius:14px; background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.012)); }
-      .card p { color:var(--muted); line-height:1.55; margin:0; }
-      .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); margin-top:38px; }
-      .metric { background:#0d0a0d; padding:24px 20px; }
-      .metric strong { display:block; font-size:2rem; letter-spacing:-.05em; }
-      .metric span { display:block; color:var(--muted); margin-top:7px; font-size:.9rem; }
-      .quote { border-left:2px solid var(--rose); margin:38px 0 0; padding:4px 0 4px 22px; max-width:760px; color:#f3eaf0; font-size:clamp(1.35rem,2.4vw,2rem); letter-spacing:-.035em; line-height:1.3; }
-      .contact { text-align:center; padding:112px 0; }
-      .contact .lead { margin:0 auto; }
-      footer { border-top:1px solid var(--line); color:#958c92; font:400 11px 'DM Mono',monospace; padding:22px 0 38px; }
-      @media (max-width:820px) { .hero,.split { grid-template-columns:1fr; } .hero { padding-top:48px; } .hero-art { min-height:420px; } .roster { grid-template-columns:repeat(2,1fr); } .model { grid-template-columns:1fr; } .metrics { grid-template-columns:repeat(2,1fr); } }
-      @media (max-width:480px) { .wrap { width:min(100% - 28px,1160px); } nav .button { padding:9px 12px; font-size:.84rem; } .roster { gap:9px; } .creator { min-height:300px; } section { padding:70px 0; } }
+      .shell { width:min(1340px,calc(100% - 34px)); margin:auto; border-left:1px solid var(--line); border-right:1px solid var(--line); position:relative; }
+      .grid { background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px); background-size:66px 66px; }
+      .mono,.eyebrow,.nav-links,a.button,.metric-label,.index { font:500 11px 'DM Mono',monospace; letter-spacing:.1em; text-transform:uppercase; }
+      nav { height:82px; display:flex; align-items:center; justify-content:space-between; padding:0 30px; border-bottom:1px solid var(--line); background:rgba(7,7,8,.85); backdrop-filter:blur(18px); position:sticky; top:0; z-index:10; }
+      .brand { display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:-.03em; line-height:.9; }
+      .brand img { width:31px; height:31px; object-fit:contain; }
+      .brand small { color:var(--pink); font:500 9px 'DM Mono',monospace; letter-spacing:.17em; }
+      .nav-links { display:flex; align-items:center; gap:26px; color:#b7b2b5; }
+      .nav-links a:hover { color:var(--ink); }
+      .button { display:inline-flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:8px; padding:12px 15px; transition:.25s ease; letter-spacing:.07em; }
+      .button:hover { border-color:var(--ink); transform:translateY(-2px); }
+      .button.primary { background:var(--ink); border-color:var(--ink); color:#0b0b0c; }
+      .button.primary:hover { background:var(--pink); border-color:var(--pink); }
+      .arrow { font-size:16px; line-height:8px; }
+      .hero { min-height:720px; position:relative; display:grid; grid-template-columns:minmax(0,1.08fr) minmax(350px,.92fr); overflow:hidden; }
+      .hero-copy { padding:118px 42px 54px; display:flex; flex-direction:column; justify-content:space-between; border-right:1px solid var(--line); position:relative; z-index:2; }
+      .hero-copy:before { content:'Æ'; position:absolute; font-size:34rem; line-height:1; top:68px; right:-88px; color:rgba(255,255,255,.025); pointer-events:none; }
+      .eyebrow { color:var(--pink); margin:0; }
+      h1 { max-width:800px; margin:27px 0 25px; font-size:clamp(4rem,8.4vw,8.7rem); letter-spacing:-.09em; line-height:.82; font-weight:600; position:relative; }
+      .outline { color:transparent; -webkit-text-stroke:1px rgba(245,242,243,.7); }
+      .lead { max-width:590px; color:#d7d2d5; font-size:clamp(1.04rem,1.35vw,1.23rem); line-height:1.58; margin:0; }
+      .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:31px; }
+      .status { display:flex; align-items:center; gap:10px; color:var(--mute); }
+      .pulse { width:8px; height:8px; border-radius:100%; background:var(--pink); box-shadow:0 0 0 0 rgba(255,84,120,.6); animation:pulse 2s infinite; }
+      @keyframes pulse { 70% { box-shadow:0 0 0 11px rgba(255,84,120,0); } 100% { box-shadow:0 0 0 0 rgba(255,84,120,0); } }
+      .hero-media { position:relative; min-height:500px; background:#131217; overflow:hidden; }
+      .hero-media video,.hero-media img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+      .hero-media video { opacity:.8; }
+      .hero-media:after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(6,6,7,.04),rgba(6,6,7,.52)); }
+      .media-ui { position:absolute; z-index:2; inset:auto 22px 22px; display:flex; justify-content:space-between; align-items:flex-end; gap:20px; }
+      .media-ui p { margin:0; max-width:250px; color:#ebe6e8; font-size:.92rem; line-height:1.35; }
+      .orbit { width:74px; height:74px; border-radius:50%; border:1px solid rgba(255,255,255,.5); display:grid; place-items:center; color:#fff; animation:spin 10s linear infinite; }
+      @keyframes spin { to { transform:rotate(360deg); } }
+      .orbit i { display:block; font-style:normal; transform:rotate(-45deg); }
+      .ticker { display:flex; overflow:hidden; white-space:nowrap; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:#0d0c0f; }
+      .ticker div { padding:17px 0; min-width:max-content; color:#b9b1b5; animation:slide 28s linear infinite; }
+      .ticker b { color:var(--pink); padding:0 21px; font-weight:400; }
+      @keyframes slide { to { transform:translateX(-50%); } }
+      section { border-bottom:1px solid var(--line); padding:0; }
+      .section-header { padding:26px 30px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); }
+      .section-header h2 { font-size:clamp(1.7rem,3vw,3rem); letter-spacing:-.07em; margin:0; }
+      .index { color:var(--pink); }
+      .manifesto { display:grid; grid-template-columns:.88fr 1.12fr; }
+      .manifesto .statement { padding:60px 42px; min-height:430px; border-right:1px solid var(--line); display:flex; flex-direction:column; justify-content:space-between; }
+      .statement h3 { font-size:clamp(2.15rem,4vw,4.25rem); letter-spacing:-.08em; line-height:.94; max-width:530px; margin:0; }
+      .statement p,.copy { color:var(--mute); font-size:1.04rem; line-height:1.64; }
+      .principles { display:grid; grid-template-columns:1fr 1fr; }
+      .principle { min-height:215px; padding:29px; border-bottom:1px solid var(--line); }
+      .principle:nth-child(odd) { border-right:1px solid var(--line); }
+      .principle h4 { font-size:1.15rem; margin:0 0 11px; letter-spacing:-.04em; }
+      .principle p { color:var(--mute); font-size:.94rem; line-height:1.5; margin:0; }
+      .aether-intro { display:grid; grid-template-columns:1fr 1fr; }
+      .aether-title { padding:50px 42px; border-right:1px solid var(--line); }
+      .aether-title h3 { font-size:clamp(2.8rem,5.7vw,6rem); letter-spacing:-.1em; line-height:.8; margin:18px 0; }
+      .aether-title p { color:var(--mute); max-width:430px; line-height:1.6; }
+      .aether-map { padding:32px; position:relative; min-height:300px; overflow:hidden; display:grid; place-items:center; }
+      .aether-map:before,.aether-map:after { content:''; position:absolute; width:300px; height:300px; border:1px solid var(--line); border-radius:50%; }
+      .aether-map:after { width:175px; height:175px; border-color:rgba(255,84,120,.55); }
+      .aether-map strong { font-size:3rem; z-index:1; letter-spacing:-.1em; }
+      .nodes { position:absolute; inset:0; z-index:2; }
+      .node { position:absolute; font:500 10px 'DM Mono',monospace; letter-spacing:.1em; color:#ddd7da; }
+      .node:before { content:''; width:8px; height:8px; display:inline-block; margin-right:8px; border-radius:50%; background:var(--pink); }
+      .node.fire { top:15%; left:18%; } .node.water { top:22%; right:15%; } .node.air { bottom:21%; left:17%; } .node.earth { bottom:13%; right:17%; }
+      .roster { display:grid; grid-template-columns:repeat(4,1fr); }
+      .creator { position:relative; min-height:460px; overflow:hidden; border-right:1px solid var(--line); background:#141216; }
+      .creator:last-child { border-right:0; }
+      .creator img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .6s cubic-bezier(.2,.8,.2,1); }
+      .creator:hover img { transform:scale(1.065); }
+      .creator:after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.84)); }
+      .creator-info { position:absolute; z-index:1; inset:auto 20px 20px; }
+      .creator-info span { color:#d7ccd1; font:500 10px 'DM Mono',monospace; letter-spacing:.13em; }
+      .creator-info h3 { font-size:1.65rem; margin:6px 0 4px; letter-spacing:-.06em; }
+      .creator-info p { margin:0; color:#ded9dc; line-height:1.35; font-size:.86rem; }
+      .metrics { display:grid; grid-template-columns:repeat(4,1fr); }
+      .metric { padding:35px 27px; min-height:175px; border-right:1px solid var(--line); display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(140deg,rgba(255,255,255,.03),transparent); }
+      .metric:last-child { border-right:0; }
+      .metric strong { font-size:clamp(2.2rem,4vw,4rem); letter-spacing:-.09em; }
+      .metric-label { color:var(--mute); letter-spacing:.06em; }
+      .model { display:grid; grid-template-columns:repeat(3,1fr); }
+      .card { padding:37px 30px; min-height:250px; border-right:1px solid var(--line); transition:.25s ease; }
+      .card:last-child { border-right:0; }
+      .card:hover { background:#111015; }
+      .card .card-number { color:var(--pink); font:500 11px 'DM Mono',monospace; }
+      .card h3 { font-size:1.55rem; letter-spacing:-.06em; margin:54px 0 12px; }
+      .card p { margin:0; color:var(--mute); line-height:1.55; }
+      .contact { padding:90px 32px; position:relative; overflow:hidden; text-align:center; }
+      .contact:before { content:'ÆTHER'; position:absolute; left:50%; top:50%; transform:translate(-50%,-47%); font-size:clamp(7rem,18vw,19rem); letter-spacing:-.14em; color:rgba(255,255,255,.025); white-space:nowrap; pointer-events:none; }
+      .contact h2 { position:relative; font-size:clamp(3.2rem,7vw,7rem); line-height:.84; letter-spacing:-.1em; margin:20px auto 24px; max-width:900px; }
+      .contact p { position:relative; max-width:600px; margin:0 auto; color:var(--mute); line-height:1.55; }
+      .contact .actions { position:relative; justify-content:center; }
+      footer { padding:24px 30px 37px; color:#847d81; display:flex; justify-content:space-between; font:400 10px 'DM Mono',monospace; letter-spacing:.08em; text-transform:uppercase; }
+      @media (max-width:840px) { .nav-links { display:none; } .hero,.manifesto,.aether-intro { grid-template-columns:1fr; } .hero-copy,.manifesto .statement,.aether-title { border-right:0; } .hero { min-height:0; } .hero-copy { padding:80px 25px 36px; min-height:565px; } .hero-media { min-height:470px; border-top:1px solid var(--line); } .roster { grid-template-columns:repeat(2,1fr); } .creator:nth-child(2) { border-right:0; } .creator { min-height:390px; border-bottom:1px solid var(--line); } .metrics { grid-template-columns:repeat(2,1fr); } .metric:nth-child(2) { border-right:0; } .metric { border-bottom:1px solid var(--line); } .model { grid-template-columns:1fr; } .card { border-right:0; border-bottom:1px solid var(--line); min-height:190px; } .card h3 { margin-top:32px; } }
+      @media (max-width:510px) { .shell { width:min(100% - 20px,1340px); } nav { padding:0 16px; height:70px; } .button { padding:10px 11px; font-size:9px; } .section-header { padding:20px 18px; } .manifesto .statement,.aether-title { padding:42px 22px; } .principles { grid-template-columns:1fr; } .principle,.principle:nth-child(odd) { border-right:0; padding:25px 22px; min-height:0; } .aether-map { min-height:270px; } .roster { grid-template-columns:1fr; } .creator,.creator:nth-child(2) { min-height:435px; border-right:0; } .metrics { grid-template-columns:1fr; } .metric { border-right:0; min-height:145px; } footer { padding:22px 18px 30px; flex-direction:column; gap:10px; } }
     </style>
   </head>
   <body>
-    <div class="wrap">
+    <div class="shell grid">
       <nav>
         <a class="brand" href="#top"><img src="/assets/landing/etherial-logo.png" alt="Etherial Agency logo" /><span>Etherial Agency<br /><small>에테리얼</small></span></a>
-        <a class="button" href="mailto:etherial@thealmaexperience.com?subject=Etherial%20Agency%20enquiry">Work with us</a>
+        <div class="nav-links"><a href="#about">About</a><a href="#aether">ÆTHER</a><a href="#partners">Partners</a></div>
+        <a class="button" href="mailto:etherial@thealmaexperience.com?subject=Etherial%20Agency%20enquiry">Start a conversation <span class="arrow">↗</span></a>
       </nav>
-
       <main id="top">
-        <section class="hero" style="border-top:0">
-          <div>
-            <p class="eyebrow">Human-led creative direction · AI-powered production</p>
-            <h1>Not avatars.<br />Living worlds.</h1>
-            <p class="lead">Etherial Agency is an entertainment and IP development company creating hybrid artists, original music and connected fictional worlds at the intersection of human storytelling and artificial intelligence.</p>
-            <div class="actions"><a class="button primary" href="mailto:etherial@thealmaexperience.com?subject=Brand%20or%20media%20enquiry">Brands &amp; media</a><a class="button" href="#aether">Meet ÆTHER</a></div>
+        <section class="hero">
+          <div class="hero-copy">
+            <div>
+              <p class="eyebrow">Human-led creative direction · AI-powered production</p>
+              <h1>Beyond<br /><span class="outline">the</span> feed.</h1>
+              <p class="lead">Etherial Agency develops hybrid artists, original music and emotionally alive worlds where human storytelling meets artificial intelligence.</p>
+              <div class="actions"><a class="button primary" href="mailto:etherial@thealmaexperience.com?subject=Brand%20or%20media%20enquiry">Brands &amp; media <span class="arrow">↗</span></a><a class="button" href="#aether">Explore ÆTHER <span class="arrow">↓</span></a></div>
+            </div>
+            <div class="status mono"><span class="pulse"></span>Building the fifth element</div>
           </div>
-          <div class="hero-art"><img src="/assets/landing/hero-banner-poster.png" alt="Wonhoso, Etherial's Fire artist" /><p>ÆTHER is built around presence, emotional truth and a new kind of connection between human and digital life.</p></div>
+          <div class="hero-media">
+            <video autoplay muted loop playsinline poster="/assets/landing/hero-banner-poster.png"><source src="/assets/landing/hero-banner.mp4" type="video/mp4" /></video>
+            <div class="media-ui"><p>Not avatars. A new form of artist presence, built around voice, character and human truth.</p><div class="orbit"><i>Æ</i></div></div>
+          </div>
         </section>
-
+        <div class="ticker mono"><div>HYBRID ARTISTS <b>✦</b> ORIGINAL MUSIC <b>✦</b> ÆTHER UNIVERSE <b>✦</b> CULTURAL IP <b>✦</b> HUMAN PRESENCE <b>✦</b>&nbsp;&nbsp;HYBRID ARTISTS <b>✦</b> ORIGINAL MUSIC <b>✦</b> ÆTHER UNIVERSE <b>✦</b> CULTURAL IP <b>✦</b> HUMAN PRESENCE <b>✦</b></div></div>
         <section id="about">
-          <div class="split">
-            <div><p class="eyebrow">What we make</p><h2>Stories that people can feel.</h2></div>
-            <div class="copy">Etherial began with a simple belief: technology should not flatten creativity. It should give people more ways to express who they are. We develop artists and characters with identity, continuity and emotional depth—not disposable content.
-              <div class="principles">
-                <div class="principle"><strong>Hybrid artists</strong>Real people contribute their likeness, voice, lived perspective and personal Manifest. AI becomes a production language that expands their presence.</div>
-                <div class="principle"><strong>Full AI characters</strong>Entirely fictional identities, authored by a real creative perspective and developed with the same care for voice, world and consistency.</div>
-                <div class="principle"><strong>Creative IP</strong>Music, short-form narrative, community and future interactive experiences connect each artist to a larger universe.</div>
-              </div>
+          <div class="section-header"><span class="index">01 / About Etherial</span><h2>Made to be felt.</h2><span class="mono">↓</span></div>
+          <div class="manifesto">
+            <div class="statement"><h3>Technology should expand a person, never flatten them.</h3><p>We make artists and characters with identity, continuity and emotional depth—not disposable content.</p></div>
+            <div class="principles">
+              <article class="principle"><h4>Hybrid artists</h4><p>Real people contribute their likeness, voice, lived perspective and personal Manifest. AI expands their presence.</p></article>
+              <article class="principle"><h4>Full AI characters</h4><p>Fictional identities authored by a real creative perspective, developed with care for voice, world and consistency.</p></article>
+              <article class="principle"><h4>Creative IP</h4><p>Music, short-form narrative, community and future interactive experiences become one connected ecosystem.</p></article>
+              <article class="principle"><h4>Human direction</h4><p>The emotional intention and creative choices are always human. AI is our production language.</p></article>
             </div>
           </div>
-          <p class="quote">“The soul of everything we create is entirely human.”</p>
         </section>
-
         <section id="aether">
-          <p class="eyebrow">The ÆTHER Universe</p>
-          <h2>Four elements. One living world.</h2>
-          <p class="copy" style="max-width:760px">ÆTHER is Etherial's original universe: a growing mythology where artists, music, narrative and community move between the real and the digital. Etherial is the fifth element—the invisible force connecting them all.</p>
+          <div class="section-header"><span class="index">02 / The ÆTHER Universe</span><span class="mono">A world in motion</span></div>
+          <div class="aether-intro">
+            <div class="aether-title"><p class="eyebrow">Four elements. One living world.</p><h3>ÆTHER<br />MOVES<br />BETWEEN.</h3><p>Artists, music, narrative and community live between the real and the digital. Etherial is the fifth element—the invisible force connecting them all.</p></div>
+            <div class="aether-map"><strong>Æ</strong><div class="nodes"><span class="node fire">FIRE / WONHOSO</span><span class="node water">WATER / ZION</span><span class="node air">AIR / IVY</span><span class="node earth">EARTH / YUA</span></div></div>
+          </div>
           <div class="roster">
-            <article class="creator"><img src="/assets/landing/team-wonho.jpg" alt="Wonhoso" /><div><span>01 · FIRE</span><h3>Wonhoso</h3><p>Hybrid artist · music, narrative and global fan community.</p></div></article>
-            <article class="creator"><img src="/assets/landing/team-zion.jpg" alt="Zion" /><div><span>02 · WATER</span><h3>Zion</h3><p>Hybrid artist · fashion, movement and visual expression.</p></div></article>
-            <article class="creator"><img src="/assets/landing/team-evie.jpg" alt="Ivy" /><div><span>03 · AIR</span><h3>Ivy</h3><p>Hybrid artist · beauty, finance and women's empowerment.</p></div></article>
-            <article class="creator"><img src="/assets/landing/team-yua.jpg" alt="Yua" /><div><span>04 · EARTH</span><h3>Yua</h3><p>Fully digital creator · kawaii culture, anime and spirituality.</p></div></article>
+            <article class="creator"><img src="/assets/landing/team-wonho.jpg" alt="Wonhoso" /><div class="creator-info"><span>01 · Fire</span><h3>Wonhoso</h3><p>Hybrid artist · music, narrative and global community.</p></div></article>
+            <article class="creator"><img src="/assets/landing/team-zion.jpg" alt="Zion" /><div class="creator-info"><span>02 · Water</span><h3>Zion</h3><p>Hybrid artist · fashion, movement and visual expression.</p></div></article>
+            <article class="creator"><img src="/assets/landing/team-evie.jpg" alt="Ivy" /><div class="creator-info"><span>03 · Air</span><h3>Ivy</h3><p>Hybrid artist · beauty, finance and women’s empowerment.</p></div></article>
+            <article class="creator"><img src="/assets/landing/team-yua.jpg" alt="Yua" /><div class="creator-info"><span>04 · Earth</span><h3>Yua</h3><p>Fully digital creator · kawaii culture, anime and spirituality.</p></div></article>
           </div>
         </section>
-
-        <section id="partnerships">
-          <p class="eyebrow">For partners</p>
-          <h2>More than a post.<br />A place inside the story.</h2>
+        <section id="partners">
+          <div class="section-header"><span class="index">03 / Audience</span><h2>Proof of presence.</h2><span class="mono">Live snapshot</span></div>
+          <div class="metrics">
+            <div class="metric"><strong>501K+</strong><span class="metric-label">Instagram followers</span></div>
+            <div class="metric"><strong>7.2M+</strong><span class="metric-label">Instagram views / 30 days</span></div>
+            <div class="metric"><strong>2.5M+</strong><span class="metric-label">Facebook views / 28 days</span></div>
+            <div class="metric"><strong>60K+</strong><span class="metric-label">TikTok followers</span></div>
+          </div>
+        </section>
+        <section>
+          <div class="section-header"><span class="index">04 / Partnerships</span><h2>Build inside the story.</h2><span class="mono">→</span></div>
           <div class="model">
-            <div class="card"><h3>Brand partnerships</h3><p>Purposeful product integrations across social, music and storytelling—built around the right artist, audience and cultural moment.</p></div>
-            <div class="card"><h3>Original content</h3><p>Short-form series, mini K-dramas, music projects and editorial worlds that turn attention into a lasting connection.</p></div>
-            <div class="card"><h3>Universe &amp; IP</h3><p>A growing entertainment ecosystem designed for new formats, licensing and deeper audience interaction over time.</p></div>
-          </div>
-          <div class="metrics" aria-label="Wonhoso platform snapshot">
-            <div class="metric"><strong>501K+</strong><span>Instagram followers</span></div>
-            <div class="metric"><strong>7.2M+</strong><span>Instagram views / 30 days</span></div>
-            <div class="metric"><strong>2.5M+</strong><span>Facebook views / 28 days</span></div>
-            <div class="metric"><strong>60K+</strong><span>TikTok followers</span></div>
-          </div>
-          <p class="copy" style="margin-top:14px;font-size:.86rem">Platform metrics are internal snapshots and are updated for each partnership proposal.</p>
-        </section>
-
-        <section id="approach">
-          <div class="split">
-            <div><p class="eyebrow">Our approach</p><h2>Built with people, not around them.</h2></div>
-            <div class="copy">Every hybrid artist begins with consent, collaboration and a clear creative voice. Their Manifest guides how they appear, speak and grow. We use AI to produce, refine and connect the work—but human direction decides what the work means.<br /><br />For audiences, that creates a different kind of presence: emotionally coherent, visually ambitious and honest about the creative process.</div>
+            <article class="card"><span class="card-number">01</span><h3>Brand partnerships</h3><p>Purposeful product integrations across social, music and storytelling—built around the right artist, audience and cultural moment.</p></article>
+            <article class="card"><span class="card-number">02</span><h3>Original content</h3><p>Mini K-dramas, music projects and editorial worlds that turn attention into a lasting emotional connection.</p></article>
+            <article class="card"><span class="card-number">03</span><h3>Universe &amp; IP</h3><p>A growing entertainment ecosystem designed for licensing, new formats and deeper audience interaction.</p></article>
           </div>
         </section>
-
         <section class="contact">
-          <p class="eyebrow">Start a conversation</p>
-          <h2>Build the next world with us.</h2>
-          <p class="lead">For brand collaborations, editorial conversations, media or creative partnerships, contact Etherial Agency.</p>
-          <div class="actions" style="justify-content:center"><a class="button primary" href="mailto:etherial@thealmaexperience.com?subject=Etherial%20Agency%20enquiry">Contact Etherial</a></div>
+          <p class="eyebrow">Start a conversation</p><h2>Build the next<br />world with us.</h2><p>For brand collaborations, editorial conversations, media or creative partnerships, contact Etherial Agency.</p>
+          <div class="actions"><a class="button primary" href="mailto:etherial@thealmaexperience.com?subject=Etherial%20Agency%20enquiry">Contact Etherial <span class="arrow">↗</span></a></div>
         </section>
       </main>
-      <footer>© Etherial Agency LLC · ÆTHER Universe</footer>
+      <footer><span>© Etherial Agency LLC</span><span>ÆTHER Universe · 2026</span></footer>
     </div>
   </body>
 </html>
