@@ -1,304 +1,145 @@
-<!DOCTYPE html><html lang="en" data-theme="default-dark" style="color-scheme:dark"><head><script>window.__hfAuthOrigin="https://auth.higgsfield.app";/**
- * Approval client SDK — the browser half of the approval flow (paired with
- * approve.html), injected into every app page. A real file, imported as text and
- * bundled at deploy (see injected-sdk.ts + the router wrangler). Runs in the
- * untrusted app page: plain ES5, idempotent (window.__hfPatched), fully
- * try/catch-wrapped, installed inline+synchronous at <head> so it's present
- * before any app code runs.
- *
- * There is exactly ONE approval trigger: window.hf.requestGeneration(model,
- * params, opts). The app calls it on the user's Generate action; the modal is
- * visible exactly while the returned promise is pending. Approve resolves the
- * minted single-use intent id, which the app threads to its server function and
- * the fnf SDK adapter sends as the submit body's confirmation_token; cancel
- * rejects with a DOMException named AbortError (a user choice, not a failure).
- * Enforcement is entirely server-side: the outbound spend gate 403s any
- * POST /jobs/submit that doesn't carry a matching minted approval (see
- * outbound-worker/src/spend-gate.ts), so an app that skips the call gets a
- * self-describing failed submit, never a silent spend. This SDK never inspects
- * request bodies and never opens a modal on its own.
- */
-(function () {
-  try {
-    if (window.__hfPatched) return;
-    window.__hfPatched = true;
-    var of = window.fetch;
-    if (typeof of !== "function") return;
-    // Approval surface origin (auth.<zone>, serving the consent page at
-    // /approve). Preferred source: the origin the router stamps ahead of this
-    // script (injected-sdk.ts) — apps can be served on CUSTOM DOMAINS, where
-    // deriving from the page host would fabricate a non-existent
-    // auth.<customdomain>. Host derivation stays as the fallback for stale
-    // cached HTML that predates the stamp.
-    var APPROVE =
-      typeof window.__hfAuthOrigin === "string" && window.__hfAuthOrigin.indexOf("https://") === 0
-        ? window.__hfAuthOrigin
-        : "https://auth." + location.host.split(".").slice(1).join(".");
-    window.__hfFetches = window.__hfFetches || [];
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Etherial Agency builds human-led hybrid artists, original worlds and cultural IP at the intersection of AI and storytelling." />
+    <meta property="og:title" content="Etherial Agency — Human-led hybrid artists and worlds" />
+    <meta property="og:description" content="A new kind of entertainment agency: human-led creative direction, AI-powered production." />
+    <meta property="og:type" content="website" />
+    <title>Etherial Agency — Human-led hybrid artists and worlds</title>
+    <link rel="icon" href="/assets/landing/etherial-logo.png" />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+      :root { --ink:#f7f5f3; --muted:#b7b1b6; --line:rgba(255,255,255,.14); --bg:#080608; --rose:#ff4d72; --amber:#ffb655; }
+      * { box-sizing:border-box; }
+      html { scroll-behavior:smooth; background:var(--bg); }
+      body { margin:0; color:var(--ink); background:radial-gradient(circle at 80% 8%,rgba(128,43,78,.26),transparent 25%),var(--bg); font-family:'Space Grotesk',Arial,sans-serif; }
+      a { color:inherit; text-decoration:none; }
+      .wrap { width:min(1160px,calc(100% - 40px)); margin:auto; }
+      nav { display:flex; justify-content:space-between; align-items:center; padding:24px 0; border-bottom:1px solid var(--line); }
+      .brand { display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.02em; }
+      .brand img { width:34px; height:34px; object-fit:contain; }
+      .brand small,.eyebrow { color:var(--rose); font:500 11px 'DM Mono',monospace; letter-spacing:.14em; text-transform:uppercase; }
+      .button { display:inline-flex; align-items:center; justify-content:center; padding:12px 17px; border:1px solid var(--ink); border-radius:999px; font-weight:600; transition:.2s ease; }
+      .button:hover { background:var(--ink); color:var(--bg); }
+      .button.primary { color:#120b0d; background:var(--rose); border-color:var(--rose); }
+      .button.primary:hover { transform:translateY(-2px); background:#ff7792; }
+      .hero { min-height:680px; display:grid; grid-template-columns:1.08fr .92fr; align-items:center; gap:36px; padding:78px 0 96px; }
+      h1 { font-size:clamp(3.5rem,8vw,7.2rem); letter-spacing:-.075em; line-height:.9; margin:18px 0 26px; max-width:790px; }
+      h2 { font-size:clamp(2rem,4.2vw,4rem); letter-spacing:-.055em; line-height:.98; margin:12px 0 18px; }
+      h3 { margin:0 0 8px; font-size:1.25rem; }
+      .lead { font-size:clamp(1.07rem,1.7vw,1.35rem); line-height:1.6; max-width:635px; color:#ded8dd; }
+      .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:30px; }
+      .hero-art { min-height:500px; position:relative; overflow:hidden; border:1px solid var(--line); border-radius:24px; background:#191216; }
+      .hero-art img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; opacity:.86; }
+      .hero-art:after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 25%,rgba(5,3,5,.85)); }
+      .hero-art p { position:absolute; z-index:1; bottom:20px; left:22px; right:22px; margin:0; font:500 11px 'DM Mono',monospace; line-height:1.55; color:#f8dee5; }
+      section { padding:96px 0; border-top:1px solid var(--line); }
+      .split { display:grid; grid-template-columns:.85fr 1.15fr; gap:72px; }
+      .copy { font-size:1.13rem; color:var(--muted); line-height:1.68; }
+      .principles { display:grid; gap:14px; margin-top:26px; }
+      .principle { padding:18px 0; border-top:1px solid var(--line); font-size:1.04rem; line-height:1.45; }
+      .principle strong { display:block; margin-bottom:5px; color:var(--ink); }
+      .roster { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:40px; }
+      .creator { min-height:420px; position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--line); background:#242024; }
+      .creator img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .45s ease; }
+      .creator:hover img { transform:scale(1.05); }
+      .creator:after { content:''; position:absolute; inset:0; background:linear-gradient(transparent 35%,rgba(0,0,0,.84)); }
+      .creator div { position:absolute; z-index:1; bottom:18px; left:17px; right:17px; }
+      .creator span { color:#d5cbd0; font:400 11px 'DM Mono',monospace; }
+      .creator p { margin:4px 0 0; color:#fff; font-size:.94rem; line-height:1.35; }
+      .model { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-top:38px; }
+      .card { padding:25px; min-height:210px; border:1px solid var(--line); border-radius:14px; background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.012)); }
+      .card p { color:var(--muted); line-height:1.55; margin:0; }
+      .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); margin-top:38px; }
+      .metric { background:#0d0a0d; padding:24px 20px; }
+      .metric strong { display:block; font-size:2rem; letter-spacing:-.05em; }
+      .metric span { display:block; color:var(--muted); margin-top:7px; font-size:.9rem; }
+      .quote { border-left:2px solid var(--rose); margin:38px 0 0; padding:4px 0 4px 22px; max-width:760px; color:#f3eaf0; font-size:clamp(1.35rem,2.4vw,2rem); letter-spacing:-.035em; line-height:1.3; }
+      .contact { text-align:center; padding:112px 0; }
+      .contact .lead { margin:0 auto; }
+      footer { border-top:1px solid var(--line); color:#958c92; font:400 11px 'DM Mono',monospace; padding:22px 0 38px; }
+      @media (max-width:820px) { .hero,.split { grid-template-columns:1fr; } .hero { padding-top:48px; } .hero-art { min-height:420px; } .roster { grid-template-columns:repeat(2,1fr); } .model { grid-template-columns:1fr; } .metrics { grid-template-columns:repeat(2,1fr); } }
+      @media (max-width:480px) { .wrap { width:min(100% - 28px,1160px); } nav .button { padding:9px 12px; font-size:.84rem; } .roster { gap:9px; } .creator { min-height:300px; } section { padding:70px 0; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav>
+        <a class="brand" href="#top"><img src="/assets/landing/etherial-logo.png" alt="Etherial Agency logo" /><span>Etherial Agency<br /><small>에테리얼</small></span></a>
+        <a class="button" href="mailto:etherial@thealmaexperience.com?subject=Etherial%20Agency%20enquiry">Work with us</a>
+      </nav>
 
-    // Single-flight: at most ONE approval modal at a time. A fast double-click (or
-    // an app firing two requests) would otherwise open a second scrim+iframe stacked
-    // on the first — so a second approve() while one is open returns the in-flight
-    // promise instead of opening another modal.
-    var openModal = null;
+      <main id="top">
+        <section class="hero" style="border-top:0">
+          <div>
+            <p class="eyebrow">Human-led creative direction · AI-powered production</p>
+            <h1>Not avatars.<br />Living worlds.</h1>
+            <p class="lead">Etherial Agency is an entertainment and IP development company creating hybrid artists, original music and connected fictional worlds at the intersection of human storytelling and artificial intelligence.</p>
+            <div class="actions"><a class="button primary" href="mailto:etherial@thealmaexperience.com?subject=Brand%20or%20media%20enquiry">Brands &amp; media</a><a class="button" href="#aether">Meet ÆTHER</a></div>
+          </div>
+          <div class="hero-art"><img src="/assets/landing/hero-banner-poster.png" alt="Wonhoso, Etherial's Fire artist" /><p>ÆTHER is built around presence, emotional truth and a new kind of connection between human and digital life.</p></div>
+        </section>
 
-    // The modal is a cross-origin iframe of auth.<zone>/approve: the app cannot
-    // read or script it, and WHO may frame the page is pinned server-side by its
-    // frame-ancestors. The page itself obtains the authoritative price from fnf
-    // before enabling Generate; app-supplied display prices are intentionally
-    // ignored. (The app DOM could still overlay the iframe — the spend gate's
-    // server-side job binding is what makes a spoofed click worthless.)
-    function approve(job) {
-      if (openModal) return openModal;
-      openModal = new Promise(function (resolve, reject) {
-        var grant = null;
-        var ready = false;
-        var done = false;
-        var openedAt = Date.now();
+        <section id="about">
+          <div class="split">
+            <div><p class="eyebrow">What we make</p><h2>Stories that people can feel.</h2></div>
+            <div class="copy">Etherial began with a simple belief: technology should not flatten creativity. It should give people more ways to express who they are. We develop artists and characters with identity, continuity and emotional depth—not disposable content.
+              <div class="principles">
+                <div class="principle"><strong>Hybrid artists</strong>Real people contribute their likeness, voice, lived perspective and personal Manifest. AI becomes a production language that expands their presence.</div>
+                <div class="principle"><strong>Full AI characters</strong>Entirely fictional identities, authored by a real creative perspective and developed with the same care for voice, world and consistency.</div>
+                <div class="principle"><strong>Creative IP</strong>Music, short-form narrative, community and future interactive experiences connect each artist to a larger universe.</div>
+              </div>
+            </div>
+          </div>
+          <p class="quote">“The soul of everything we create is entirely human.”</p>
+        </section>
 
-        // Three parent layers so the iframe body can stay fully TRANSPARENT and
-        // still show no white edge:
-        //  - scrim: full-screen div carrying the blur (backdrop-filter samples the
-        //    real app behind it) + a dark tint.
-        //  - wrap: a rounded, overflow:hidden div that CLIPS the iframe. The iframe
-        //    overlaps the backdrop-filter scrim, so Chromium backs its layer
-        //    opaquely; the iframe's OWN border-radius doesn't reliably clip that
-        //    layer (leaving white corners), but a parent clip does. So the corners
-        //    outside the radius are clipped away → the blurred scrim shows through,
-        //    no white ring.
-        //  - frame: the iframe, fully transparent, filling wrap. Its page paints
-        //    only the card (edge-to-edge, no radius — wrap provides the rounding).
-        var scrim = document.createElement("div");
-        scrim.style.cssText =
-          "position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,0.28);" +
-          "-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)";
-        var wrap = document.createElement("div");
-        // opacity:0 until the page reports its height so the modal fades in at its
-        // final size (no empty-frame flash, no height re-center / layout shift).
-        // Round with clip-path (not just border-radius + overflow): clip-path is
-        // applied in the COMPOSITOR, so it clips the cross-origin iframe's own
-        // layer edge cleanly. border-radius/overflow only clip the shape and leave
-        // the iframe's opaque WHITE base fringing at the rounded corners (the white
-        // peek). background = card color as a second line of defense. Both the wrap
-        // and the iframe carry the clip; keep 24px in sync with the card radius.
-        wrap.style.cssText =
-          "position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);" +
-          "width:min(400px,calc(100vw - 32px));height:188px;border-radius:24px;overflow:hidden;" +
-          "-webkit-clip-path:inset(0 round 24px);clip-path:inset(0 round 24px);" +
-          "background:#23262a;opacity:0;transition:opacity 0.12s ease;z-index:2147483647";
-        var frame = document.createElement("iframe");
-        // referrerPolicy="origin": the page's frame-ancestors admits a registered
-        // CUSTOM DOMAIN only when this origin arrives as the Referer (approve.ts).
-        frame.referrerPolicy = "origin";
-        frame.src = APPROVE + "/approve";
-        frame.allowTransparency = "true";
-        frame.style.cssText =
-          "display:block;width:100%;height:100%;border:0;border-radius:24px;" +
-          "-webkit-clip-path:inset(0 round 24px);clip-path:inset(0 round 24px);background:#23262a";
-        wrap.appendChild(frame);
-        var revealTimer = null;
+        <section id="aether">
+          <p class="eyebrow">The ÆTHER Universe</p>
+          <h2>Four elements. One living world.</h2>
+          <p class="copy" style="max-width:760px">ÆTHER is Etherial's original universe: a growing mythology where artists, music, narrative and community move between the real and the digital. Etherial is the fifth element—the invisible force connecting them all.</p>
+          <div class="roster">
+            <article class="creator"><img src="/assets/landing/team-wonho.jpg" alt="Wonhoso" /><div><span>01 · FIRE</span><h3>Wonhoso</h3><p>Hybrid artist · music, narrative and global fan community.</p></div></article>
+            <article class="creator"><img src="/assets/landing/team-zion.jpg" alt="Zion" /><div><span>02 · WATER</span><h3>Zion</h3><p>Hybrid artist · fashion, movement and visual expression.</p></div></article>
+            <article class="creator"><img src="/assets/landing/team-evie.jpg" alt="Ivy" /><div><span>03 · AIR</span><h3>Ivy</h3><p>Hybrid artist · beauty, finance and women's empowerment.</p></div></article>
+            <article class="creator"><img src="/assets/landing/team-yua.jpg" alt="Yua" /><div><span>04 · EARTH</span><h3>Yua</h3><p>Fully digital creator · kawaii culture, anime and spirituality.</p></div></article>
+          </div>
+        </section>
 
-        function cleanup() {
-          if (done) return;
-          done = true;
-          clearTimeout(revealTimer);
-          window.removeEventListener("message", onMessage);
-          document.removeEventListener("keydown", onKey, true);
-          wrap.remove();
-          scrim.remove();
-        }
+        <section id="partnerships">
+          <p class="eyebrow">For partners</p>
+          <h2>More than a post.<br />A place inside the story.</h2>
+          <div class="model">
+            <div class="card"><h3>Brand partnerships</h3><p>Purposeful product integrations across social, music and storytelling—built around the right artist, audience and cultural moment.</p></div>
+            <div class="card"><h3>Original content</h3><p>Short-form series, mini K-dramas, music projects and editorial worlds that turn attention into a lasting connection.</p></div>
+            <div class="card"><h3>Universe &amp; IP</h3><p>A growing entertainment ecosystem designed for new formats, licensing and deeper audience interaction over time.</p></div>
+          </div>
+          <div class="metrics" aria-label="Wonhoso platform snapshot">
+            <div class="metric"><strong>501K+</strong><span>Instagram followers</span></div>
+            <div class="metric"><strong>7.2M+</strong><span>Instagram views / 30 days</span></div>
+            <div class="metric"><strong>2.5M+</strong><span>Facebook views / 28 days</span></div>
+            <div class="metric"><strong>60K+</strong><span>TikTok followers</span></div>
+          </div>
+          <p class="copy" style="margin-top:14px;font-size:.86rem">Platform metrics are internal snapshots and are updated for each partnership proposal.</p>
+        </section>
 
-        function beacon(outcome) {
-          if (!grant) return;
-          try {
-            var payload = JSON.stringify({
-              grant: grant,
-              outcome: outcome,
-              ms_open: Date.now() - openedAt,
-            });
-            var url = APPROVE + "/approve/outcome";
-            if (navigator.sendBeacon) {
-              navigator.sendBeacon(url, new Blob([payload], { type: "text/plain" }));
-            } else {
-              of(url, { method: "POST", body: payload, mode: "no-cors", keepalive: true }).catch(
-                function () {},
-              );
-            }
-          } catch (e) {}
-        }
+        <section id="approach">
+          <div class="split">
+            <div><p class="eyebrow">Our approach</p><h2>Built with people, not around them.</h2></div>
+            <div class="copy">Every hybrid artist begins with consent, collaboration and a clear creative voice. Their Manifest guides how they appear, speak and grow. We use AI to produce, refine and connect the work—but human direction decides what the work means.<br /><br />For audiences, that creates a different kind of presence: emotionally coherent, visually ambitious and honest about the creative process.</div>
+          </div>
+        </section>
 
-        // Dismiss = the same "denied" path as the modal's Cancel button, so the
-        // caller turns it into an AbortError (a cancel, not a failure).
-        function dismiss() {
-          if (done) return;
-          cleanup();
-          beacon("denied");
-          var error = new Error("hf: denied");
-          error.hfReason = "denied";
-          reject(error);
-        }
-
-        function onKey(event) {
-          if (event.key === "Escape" || event.keyCode === 27) dismiss();
-        }
-
-        function sendRequest() {
-          if (!ready || !grant || done) return;
-          frame.contentWindow.postMessage(
-            { source: "hf-approve", type: "request", grant: grant, job: job },
-            APPROVE,
-          );
-        }
-
-        function onMessage(event) {
-          if (event.origin !== APPROVE || event.source !== frame.contentWindow) return;
-          var data = event.data || {};
-          if (data.source !== "hf-approve") return;
-          // Size the clip wrapper to the page's reported card height, and reveal
-          // ONLY once sized — modal fades in at its final height (no shift/flash).
-          if (typeof data.h === "number" && data.h > 0) {
-            wrap.style.height = data.h + "px";
-            clearTimeout(revealTimer);
-            wrap.style.opacity = "1";
-          }
-          if (data.type === "ready") {
-            ready = true;
-            sendRequest();
-            return;
-          }
-          if (data.type !== "result") return;
-          cleanup();
-          if (data.ok && typeof data.intentId === "string") {
-            resolve(data.intentId);
-            return;
-          }
-          beacon("denied");
-          var error = new Error("hf: " + (data.reason || "denied"));
-          error.hfReason = data.reason || "denied";
-          reject(error);
-        }
-
-        window.addEventListener("message", onMessage);
-        // Close on background (scrim) click and on Escape. The scrim sits behind
-        // the card (wrap), so a click on it is a click OUTSIDE the modal. Escape
-        // is captured on the parent; the page also handles Escape when focus is
-        // inside the iframe (see approve-ui).
-        scrim.addEventListener("click", dismiss);
-        document.addEventListener("keydown", onKey, true);
-        document.documentElement.appendChild(scrim);
-        document.documentElement.appendChild(wrap);
-        // Fallback: reveal at the default height if the page never reports its
-        // size, so the modal is never stuck hidden.
-        revealTimer = setTimeout(function () {
-          wrap.style.opacity = "1";
-        }, 500);
-
-        of("/__auth/approval-grant", { method: "POST" })
-          .then(function (r) {
-            return r
-              .json()
-              .catch(function () {
-                return {};
-              })
-              .then(function (b) {
-                return { s: r.status, b: b };
-              });
-          })
-          .then(function (x) {
-            if (!x.b || !x.b.grant) {
-              cleanup();
-              reject(
-                new Error(
-                  x.s === 401 ? "hf: not signed in" : "hf: approval unavailable (" + x.s + ")",
-                ),
-              );
-              return;
-            }
-            grant = x.b.grant;
-            sendRequest();
-          })
-          .catch(function (error) {
-            cleanup();
-            reject(error);
-          });
-
-        setTimeout(function () {
-          if (!done) {
-            cleanup();
-            beacon("timeout");
-            reject(new Error("hf: approval timeout"));
-          }
-        }, 120000);
-      });
-      // Release the single-flight lock once this approval settles, so the next
-      // genuine generation can open a fresh modal.
-      var release = function () {
-        openModal = null;
-      };
-      openModal.then(release, release);
-      return openModal;
-    }
-
-    // Observability-only fetch patch: request log for debugging (__hfFetches +
-    // console). No interception, no body inspection, no classification — the
-    // approval flow is driven solely by window.hf.requestGeneration.
-    window.fetch = function (input, init) {
-      try {
-        var url = typeof input === "string" ? input : (input && input.url) || String(input);
-        var method = (init && init.method) || (input && input.method) || "GET";
-        window.__hfFetches.push({ url: url, method: method, ts: Date.now() });
-        console.log("[hf-fetch]", method, url);
-      } catch (e) {}
-      return of.apply(this, arguments);
-    };
-
-    // Public SDK. The app contract (see the builder instructions and
-    // docs/generation-approval): call this on the Generate action with the SDK
-    // WIRE shape of the exact submission (wire.jobSetType + wire.params — the
-    // approval is bound server-side to the hash of {job_set_type, params} of the
-    // actual submit body), thread the resolved intent id to the server as the
-    // confirmation token, and render a cancel quietly. opts.credits is an
-    // optional display-only estimate shown in the modal. The id is a token:
-    // never logged here, and apps must not log it either.
-    window.hf = {
-      requestGeneration: function (model, params, opts) {
-        // Fail fast on a bad job identity, BEFORE any UI. The approve page
-        // (protocol.ts) silently ignores a request whose job_set_type isn't a
-        // non-empty string or whose params don't survive structured clone —
-        // which would leave the modal stuck on "Waiting for the app…" with no
-        // way to reply. A typed rejection shows the app its own bug instead.
-        if (typeof model !== "string" || !model) {
-          return Promise.reject(
-            new TypeError("hf: requestGeneration(model, params) — model must be a non-empty string"),
-          );
-        }
-        if (typeof structuredClone === "function") {
-          try {
-            structuredClone(params);
-          } catch (e) {
-            return Promise.reject(
-              new TypeError("hf: requestGeneration params must be structured-cloneable (plain JSON)"),
-            );
-          }
-        }
-        return approve({ job_set_type: model, params: params }).then(
-          function (id) {
-            console.log("[hf] approved");
-            return id;
-          },
-          // Cancel → AbortError, per the app contract ("render a quiet cancelled
-          // state"). Other failures (not signed in, unavailable, timeout) bubble
-          // as-is — those ARE failures.
-          function (e) {
-            if (e && e.hfReason === "denied") {
-              console.log("[hf] cancelled");
-              throw new DOMException("Generation cancelled", "AbortError");
-            }
-            throw e;
-          },
-        );
-      },
-    };
-  } catch (e) {}
-})();
-</script><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="preload" as="image" href="/assets/landing/etherial-logo.png"/><link rel="preload" as="image" href="/assets/landing/proof-collab.jpg"/><link rel="stylesheet" href="/assets/styles-_n16klYV.css" data-precedence="default"/><link rel="stylesheet" href="/assets/routes-CNXtvISG.css" data-precedence="default"/><title>Etherial Agency: Virtual Twins and AI Creators That Sell</title><meta name="description" content="Custom video ads in 24 hours, produced with virtual twins and full AI creators. Launch pricing: 5 videos for $500."/><meta name="author" content="Higgsfield"/><meta property="og:title" content="Etherial Agency: Virtual Twins and AI Creators That Sell"/><meta property="og:description" content="Custom video ads in 24 hours, produced with virtual twins and full AI creators. Launch pricing: 5 videos for $500."/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:site" content="@Higgsfield"/><meta property="og:image" content="https://d8j0ntlcm91z4.cloudfront.net/user_369bpjuoFzJNCnY9Qz2of7o2hiM/hf_20260730_041636_48637d00-3a96-405e-91ba-b4e966902c67.png"/><meta name="twitter:image" content="https://d8j0ntlcm91z4.cloudfront.net/user_369bpjuoFzJNCnY9Qz2of7o2hiM/hf_20260730_041636_48637d00-3a96-405e-91ba-b4e966902c67.png"/><link rel="modulepreload" href="/assets/index-Defv0t0P.js"/><link rel="modulepreload" href="/assets/routes-Cg480V0O.js"/><link rel="icon" href="https://d8j0ntlcm91z4.cloudfront.net/user_369bpjuoFzJNCnY9Qz2of7o2hiM/hf_20260730_041636_48637d00-3a96-405e-91ba-b4e966902c67.png"/></head><body class="bg-q-background-primary text-q-text-primary"><!--$--><main class="ea-page"><div aria-hidden="true" class="ea-hero-orbit" style="opacity:1"><span class="ea-hero-orbit-ring"></span><span class="ea-hero-orbit-ring ea-hero-orbit-ring-2"></span><img alt="" class="ea-hero-orbit-logo" src="/assets/landing/etherial-logo.png"/></div><nav class="ea-nav"><span class="ea-nav-brand-group"><span class="ea-orbit"><img alt="Etherial Agency" class="ea-nav-logo" src="/assets/landing/etherial-logo.png"/></span><span class="ea-nav-brand-text"><span class="ea-nav-brand">Etherial Agency</span><span class="ea-nav-brand-ko">에테리얼</span></span></span><a class="ea-nav-cta" href="mailto:etherial@thealmaexperience.com?subject=Book%20a%20call%20with%20Etherial%20Agency">Book a Call</a></nav><section class="scroll-scrub" style="--ss-accent:#ff2440;--ss-bg:#020103;--ss-ink:#f4f2fb;--ss-muted:#9b9b9b"><div class="scroll-scrub__stage"><div aria-hidden="true" class="scroll-scrub__media"><figure class="scroll-scrub__layer scroll-scrub__layer--scene" data-scroll-scrub-layer="" style="--ss-mobile-position:50% 50%;--ss-object-position:50% 50%"><picture class="scroll-scrub__picture"><source media="(hover: none) and (pointer: coarse), (max-width: 860px)" srcSet="/assets/world/scene-01-mobile-poster.png"/><img alt="" class="scroll-scrub__poster" decoding="async" fetchPriority="high" loading="eager" src="/assets/world/scene-01-poster.png"/></picture></figure></div><div aria-hidden="true" class="scroll-scrub__progress"><span></span></div><nav aria-label="Scroll chapters" class="scroll-scrub__route"><button aria-current="step" class="scroll-scrub__route-button" type="button"><span>Etherial Agency</span></button></nav></div><div class="scroll-scrub__story"><article class="scroll-scrub__chapter" data-align="left" data-scroll-scrub-band="" id="scene-01" style="min-height:140dvh"><div class="scroll-scrub__chapter-pin"><div class="scroll-scrub__copy"><p class="scroll-scrub__kicker">ETHERIAL AGENCY · 에테리얼</p><h1 class="scroll-scrub__title">This is Etherial.</h1><p class="scroll-scrub__body">Virtual twins and full AI creators. Custom video ads in 24 hours. Zero production headaches.</p><ul class="scroll-scrub__tags"><li>24-hour turnaround</li><li>Real results</li><li>가상 트윈 · Virtual twins</li></ul></div></div></article></div></section><section class="ea-section" id="about"><p class="ea-section-title">About Etherial</p><div class="ea-pill-marquee"><div class="ea-pill-track"><span class="ea-pill">Virtual Twins</span><span class="ea-pill">Full AI Creators</span><span class="ea-pill">Mini K-Dramas</span><span class="ea-pill">Mini Documentaries</span><span class="ea-pill">Brand Advertising</span><span class="ea-pill">Music Production</span><span class="ea-pill">24h Turnaround</span><span aria-hidden="true" class="ea-pill">Virtual Twins</span><span aria-hidden="true" class="ea-pill">Full AI Creators</span><span aria-hidden="true" class="ea-pill">Mini K-Dramas</span><span aria-hidden="true" class="ea-pill">Mini Documentaries</span><span aria-hidden="true" class="ea-pill">Brand Advertising</span><span aria-hidden="true" class="ea-pill">Music Production</span><span aria-hidden="true" class="ea-pill">24h Turnaround</span></div></div><p class="ea-section-sub">Etherial is a talent and production agency built around AI. We work with two kinds of creators, and it&#x27;s worth explaining the difference clearly:</p><div class="ea-benefits" style="margin-bottom:24px"><div class="ea-benefit-card"><strong>Virtual twins (AI Hybrid).</strong> A real person, with a real face and a real voice, whose content is produced through AI tools. The creator is a genuine human; the AI is how their content gets made, faster and at a scale a normal production schedule can&#x27;t match.</div><div class="ea-benefit-card"><strong>Full AI creators.</strong> A character built entirely with AI, with no real person behind the face. Same quality bar, same consistency, same ability to headline a brand campaign.</div></div><p class="ea-section-sub">Either way, brands get consistent, camera-ready talent without the scheduling risk of a traditional influencer, and creators get professional video production without needing a camera crew. We also produce original music for the creators on our roster.</p><p class="ea-section-sub">Beyond ad campaigns, we also produce mini k-dramas and mini documentaries starring our creators, plus advertising and brand campaigns for companies who want our talent fronting their marketing. And yes, we also build custom websites, like this one.</p><div class="ea-cta-wrap"><a class="ea-cta-btn" href="mailto:etherial@thealmaexperience.com?subject=Get%20a%20Free%20Banner%20Ad%20for%20Your%20Business">Get a Free Banner Ad for Your Business<!-- --> →</a></div></section><section class="ea-section" id="roster"><p class="ea-section-title">Our roster</p><p class="ea-section-sub">A mix of virtual twins and full AI creators, each with their own voice and audience.</p><div class="ea-roster-grid"><a class="ea-roster-card" href="mailto:etherial@thealmaexperience.com?subject=I&#x27;m%20interested%20in%20Wonho" style="background-image:url(/assets/landing/team-wonho.jpg)"><span class="ea-roster-num">01</span><span aria-hidden="true" class="ea-roster-arrow">↗</span><span class="ea-roster-info"><span class="ea-roster-name">Wonho</span><span class="ea-roster-element">Fire<!-- --> · <!-- -->불</span><span class="ea-roster-tag">Virtual twin artist, K-pop idol</span></span></a><a class="ea-roster-card" href="mailto:etherial@thealmaexperience.com?subject=I&#x27;m%20interested%20in%20Zion" style="background-image:url(/assets/landing/team-zion.jpg)"><span class="ea-roster-num">02</span><span aria-hidden="true" class="ea-roster-arrow">↗</span><span class="ea-roster-info"><span class="ea-roster-name">Zion</span><span class="ea-roster-element">Water<!-- --> · <!-- -->물</span><span class="ea-roster-tag">Virtual twin artist, high fashion model</span></span></a><a class="ea-roster-card" href="mailto:etherial@thealmaexperience.com?subject=I&#x27;m%20interested%20in%20Evie" style="background-image:url(/assets/landing/team-evie.jpg)"><span class="ea-roster-num">03</span><span aria-hidden="true" class="ea-roster-arrow">↗</span><span class="ea-roster-info"><span class="ea-roster-name">Evie</span><span class="ea-roster-element">Air<!-- --> · <!-- -->바람</span><span class="ea-roster-tag">Virtual twin artist, makeup and female empowerment</span></span></a><a class="ea-roster-card" href="mailto:etherial@thealmaexperience.com?subject=I&#x27;m%20interested%20in%20Yua" style="background-image:url(/assets/landing/team-yua.jpg)"><span class="ea-roster-num">04</span><span aria-hidden="true" class="ea-roster-arrow">↗</span><span class="ea-roster-info"><span class="ea-roster-name">Yua</span><span class="ea-roster-element">Earth<!-- --> · <!-- -->흙</span><span class="ea-roster-tag">100% AI creator, kawaii and spiritual</span></span></a></div><div class="ea-offer-card"><p style="font-weight:800;font-size:18px;margin-bottom:8px">Meet Wonho</p><p class="ea-section-sub" style="margin-bottom:0">Our flagship creator, a virtual twin artist and K-pop idol representing the Fire element of our roster. Real face, real voice, content produced through AI.</p></div><div class="ea-cta-wrap"><a class="ea-cta-btn" href="mailto:etherial@thealmaexperience.com?subject=Get%20a%20Free%20Banner%20Ad%20for%20Your%20Business">Get a Free Banner Ad for Your Business<!-- --> →</a></div></section><section class="ea-section" id="contact"><p class="ea-section-title" style="font-size:24px;margin-bottom:6px">Launch pricing: first 50 spots only</p><p class="ea-section-sub" style="margin-bottom:24px">For brands: get ads that convert. For creators, human or AI, looking to land brand deals: let us produce the videos that get you there. Also building your website? We do that too.</p><div class="ea-offer-grid"><div class="ea-offer-card"><p style="font-weight:800;font-size:16px;margin-bottom:10px">5 custom video ads</p><div class="ea-price-row"><span class="ea-price-new">$500</span><span class="ea-price-old">$5,000</span></div><p class="ea-note" style="margin-bottom:20px">You risk nothing. You only pay once your videos are delivered.</p><a class="ea-cta-btn" href="https://buy.stripe.com/dRmcN491DgV5cgLbGog7e00" rel="noreferrer" target="_blank">Get 5 videos, $500 →</a></div><div class="ea-offer-card"><p style="font-weight:800;font-size:16px;margin-bottom:10px">Custom website</p><div class="ea-price-row"><span class="ea-price-new">$500</span><span>one time</span></div><p class="ea-note" style="margin-bottom:20px">Delivered in 24 to 48 hours, built and launched by our team.</p><a class="ea-cta-btn" href="https://buy.stripe.com/dRmcN491DgV5cgLbGog7e00" rel="noreferrer" target="_blank">Get your website, $500 →</a></div><div class="ea-offer-card"><p style="font-weight:800;font-size:16px;margin-bottom:10px">Create your own AI influencer</p><p class="ea-note" style="margin-bottom:20px">K-pop idols and beyond, hybrid virtual twin or 100% AI creator, built, trained, and managed by our team from day one.</p><a class="ea-cta-btn" href="mailto:etherial@thealmaexperience.com?subject=Create%20my%20own%20AI%20influencer">Contact us →</a></div></div><div class="ea-cta-wrap"><a class="ea-cta-btn ea-cta-btn-outline" href="mailto:etherial@thealmaexperience.com?subject=Book%20a%20call%20with%20Etherial%20Agency">Book a call →</a></div></section><section class="ea-section"><p class="ea-section-title">Proof</p><p class="ea-section-sub">We&#x27;re a full-automation production agency for creators and brands alike, producing high-quality video that actually gets results, from short ads to mini k-dramas and mini documentaries. Every piece below was produced start to finish by our team.</p><div class="ea-proof-grid"><div class="ea-proof-card">Cinematic brand film</div><div class="ea-proof-card">Before / after transformation</div><div class="ea-proof-card">Creator testimonial style</div><div class="ea-proof-card">Problem-focused ad</div><div class="ea-proof-card">Premium product spot</div><div class="ea-proof-card ea-proof-card-video"><img alt="Creator brand collaboration" class="ea-proof-video" src="/assets/landing/proof-collab.jpg"/><span class="ea-proof-video-label">Creator collaboration</span></div><div class="ea-proof-card ea-proof-card-video"><video autoPlay="" class="ea-proof-video" loop="" muted="" playsInline="" poster="/assets/landing/proof-kdrama-poster.jpg"><source src="/assets/landing/proof-kdrama.mp4" type="video/mp4"/></video><span class="ea-proof-video-label">Mini k-drama episode</span></div><div class="ea-proof-card ea-proof-card-video"><video autoPlay="" class="ea-proof-video" loop="" muted="" playsInline="" poster="/assets/landing/proof-documentary-poster.jpg"><source src="/assets/landing/proof-documentary.mp4" type="video/mp4"/></video><span class="ea-proof-video-label">Mini documentary</span></div></div><div class="ea-cta-wrap"><a class="ea-cta-btn" href="mailto:etherial@thealmaexperience.com?subject=Get%20a%20Free%20Banner%20Ad%20for%20Your%20Business">Get a Free Banner Ad for Your Business<!-- --> →</a></div></section><section class="ea-section"><p class="ea-section-title">How does the process work?</p><p class="ea-section-sub">You bring the business. We handle everything else.</p><div class="ea-steps"><div class="ea-step"><div class="ea-step-num">1</div><div class="ea-step-text">You answer 5 quick questions about your business, that&#x27;s it.</div></div><div class="ea-step"><div class="ea-step-num">2</div><div class="ea-step-text">We research your audience and figure out what actually converts in your niche.</div></div><div class="ea-step"><div class="ea-step-num">3</div><div class="ea-step-text">We write the selling script: the hook, the offer, the close.</div></div><div class="ea-step"><div class="ea-step-num">4</div><div class="ea-step-text">We produce the ads with our AI Hybrid creators and generation pipeline.</div></div><div class="ea-step"><div class="ea-step-num">5</div><div class="ea-step-text">You get finished, ready-to-run video ads. No filming, no crew, no back-and-forth.</div></div></div><div class="ea-cta-wrap"><a class="ea-cta-btn" href="mailto:etherial@thealmaexperience.com?subject=Get%20a%20Free%20Banner%20Ad%20for%20Your%20Business">Get a Free Banner Ad for Your Business<!-- --> →</a></div></section><section class="ea-section"><p class="ea-section-title">Why work with us</p><div class="ea-benefits"><div class="ea-benefit-card">No filming days. Everything is produced with AI, on our end.</div><div class="ea-benefit-card">No extra costs. One flat price, no hidden production fees.</div><div class="ea-benefit-card">A full-cycle agency: strategy, script, creators, and delivery, all handled for you.</div><div class="ea-benefit-card">Real AI Hybrid creators: an actual roster of trained, consistent on-camera talent.</div></div><div class="ea-cta-wrap"><a class="ea-cta-btn" href="mailto:etherial@thealmaexperience.com?subject=Get%20a%20Free%20Banner%20Ad%20for%20Your%20Business">Get a Free Banner Ad for Your Business<!-- --> →</a></div></section><section class="ea-section" id="faq"><p class="ea-section-title">Questions people actually ask</p><div><div class="ea-faq-item"><p class="ea-faq-q">What kind of ads will I get?</p><p class="ea-faq-a">Fully produced video ads: hook, script, visuals, and a clear call to action, ready to run on Instagram, TikTok, or wherever your customers are.</p></div><div class="ea-faq-item"><p class="ea-faq-q">Do I need to film anything?</p><p class="ea-faq-a">No. You answer 5 short questions about your business and we take it from there. No filming, no camera crew, no studio time.</p></div><div class="ea-faq-item"><p class="ea-faq-q">How long will it take?</p><p class="ea-faq-a">Custom ads are delivered in 24 hours from the moment we have your answers.</p></div><div class="ea-faq-item"><p class="ea-faq-q">Do you also build websites?</p><p class="ea-faq-a">Yes. A custom website, like this one, is $500 one time, delivered in 24 to 48 hours, built and launched by our team.</p></div><div class="ea-faq-item"><p class="ea-faq-q">How do I get in touch?</p><p class="ea-faq-a">Tap Book a Call to email our team directly. That&#x27;s the fastest way to start a conversation.</p></div></div><div class="ea-cta-wrap"><a class="ea-cta-btn" href="mailto:etherial@thealmaexperience.com?subject=Get%20a%20Free%20Banner%20Ad%20for%20Your%20Business">Get a Free Banner Ad for Your Business<!-- --> →</a></div></section><footer class="ea-footer">Etherial Agency LLC</footer></main><!--/$--><script class="$tsr" id="$tsr-stream-barrier">(self.$R=self.$R||{})["tsr"]=[];self.$_TSR={h(){this.hydrated=!0,this.c()},e(){this.streamEnded=!0,this.c()},c(){this.hydrated&&this.streamEnded&&(delete self.$_TSR,delete self.$R.tsr)},p(e){this.initialized?e():this.buffer.push(e)},buffer:[]};$_TSR.router=($R=>$R[0]={manifest:$R[1]={routes:$R[2]={__root__:$R[3]={preloads:$R[4]=["/assets/index-Defv0t0P.js"],scripts:$R[5]=[$R[6]={attrs:$R[7]={type:"module",async:!0,src:"/assets/index-Defv0t0P.js"}}]},"/":$R[8]={preloads:$R[9]=["/assets/routes-Cg480V0O.js"],css:$R[10]=["/assets/routes-CNXtvISG.css"]}}},matches:$R[11]=[$R[12]={i:"__root__ ",u:1785468148414,s:"success",ssr:!0},$R[13]={i:"  ",u:1785468148414,s:"success",ssr:!0}],lastMatchId:"  "})($R["tsr"]);$_TSR.e();document.currentScript.remove()</script><script type="module" async="" src="/assets/index-Defv0t0P.js"></script></body></html>
+        <section class="contact">
+          <p class="eyebrow">Start a conversation</p>
+          <h2>Build the next world with us.</h2>
+          <p class="lead">For brand collaborations, editorial conversations, media or creative partnerships, contact Etherial Agency.</p>
+          <div class="actions" style="justify-content:center"><a class="button primary" href="mailto:etherial@thealmaexperience.com?subject=Etherial%20Agency%20enquiry">Contact Etherial</a></div>
+        </section>
+      </main>
+      <footer>© Etherial Agency LLC · ÆTHER Universe</footer>
+    </div>
+  </body>
+</html>
