@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Etherial Agency builds human-led hybrid artists, original worlds and cultural IP at the intersection of AI and storytelling." />
-    <meta property="og:title" content="Etherial Agency — Human-led hybrid artists and worlds" />
-    <meta property="og:description" content="A new kind of entertainment agency: human-led creative direction, AI-powered production." />
+    <meta name="description" content="Etherial Agency builds Virtual Twin Artists, original worlds and cultural IP at the intersection of AI and storytelling." />
+    <meta property="og:title" content="Etherial Agency | Virtual Twin Artists and worlds" />
+    <meta property="og:description" content="A new kind of entertainment agency with human creative direction and AI production." />
     <meta property="og:type" content="website" />
-    <title>Etherial Agency — Human-led hybrid artists and worlds</title>
+    <title>Etherial Agency | Virtual Twin Artists and worlds</title>
     <link rel="icon" href="/assets/landing/etherial-logo.png" />
     <style>
       @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
@@ -82,6 +82,7 @@
       .node.fire { top:15%; left:18%; } .node.water { top:22%; right:15%; } .node.air { bottom:21%; left:17%; } .node.earth { bottom:13%; right:17%; }
       .roster { display:grid; grid-template-columns:repeat(4,1fr); }
       .creator { position:relative; min-height:460px; overflow:hidden; border-right:1px solid var(--line); background:#141216; }
+      button.creator { width:100%; padding:0; color:inherit; text-align:left; font:inherit; cursor:pointer; border-top:0; border-left:0; border-bottom:0; }
       .creator:last-child { border-right:0; }
       .creator img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .6s cubic-bezier(.2,.8,.2,1); }
       .creator:hover img { transform:scale(1.065); }
@@ -102,30 +103,49 @@
       .card .card-number { color:var(--pink); font:500 11px 'DM Mono',monospace; }
       .card h3 { font-size:1.55rem; letter-spacing:-.06em; margin:54px 0 12px; }
       .card p { margin:0; color:var(--mute); line-height:1.55; }
+      .service-price { display:block; margin-top:26px; font-size:1.55rem; letter-spacing:-.06em; }
+      .text-link { display:inline-block; margin-top:16px; color:var(--pink); font:500 10px 'DM Mono',monospace; letter-spacing:.08em; text-transform:uppercase; }
+      .text-link:hover { color:var(--ink); }
       .contact { padding:90px 32px; position:relative; overflow:hidden; text-align:center; }
       .contact:before { content:'ÆTHER'; position:absolute; left:50%; top:50%; transform:translate(-50%,-47%); font-size:clamp(7rem,18vw,19rem); letter-spacing:-.14em; color:rgba(255,255,255,.025); white-space:nowrap; pointer-events:none; }
       .contact h2 { position:relative; font-size:clamp(3.2rem,7vw,7rem); line-height:.84; letter-spacing:-.1em; margin:20px auto 24px; max-width:900px; }
       .contact p { position:relative; max-width:600px; margin:0 auto; color:var(--mute); line-height:1.55; }
       .contact .actions { position:relative; justify-content:center; }
+      .artist-modal { position:fixed; inset:0; z-index:30; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(3,3,5,.76); backdrop-filter:blur(13px); }
+      .artist-modal.open { display:flex; }
+      .modal-card { width:min(760px,100%); max-height:min(790px,calc(100vh - 36px)); overflow:auto; border:1px solid rgba(255,255,255,.23); background:#0b0b0e; box-shadow:0 28px 100px rgba(0,0,0,.62); position:relative; }
+      .modal-grid { display:grid; grid-template-columns:minmax(190px,.7fr) 1.3fr; }
+      .modal-grid img { width:100%; height:100%; min-height:400px; object-fit:cover; }
+      .modal-copy { padding:38px 34px; }
+      .modal-copy h2 { font-size:clamp(2.5rem,5vw,4.5rem); letter-spacing:-.09em; line-height:.84; margin:10px 0 17px; }
+      .modal-copy p { color:var(--mute); line-height:1.62; margin:0 0 24px; }
+      .modal-links { display:flex; flex-wrap:wrap; gap:8px; }
+      .modal-links a { padding:10px 12px; border:1px solid var(--line); border-radius:7px; font:500 10px 'DM Mono',monospace; letter-spacing:.07em; text-transform:uppercase; }
+      .modal-links a:hover { border-color:var(--pink); color:var(--pink); }
+      .modal-close { position:absolute; top:13px; right:13px; z-index:2; width:37px; height:37px; border:1px solid var(--line); border-radius:50%; background:#0d0d10; color:#fff; font-size:20px; cursor:pointer; }
+      .social-footer { padding:24px 30px; display:flex; flex-wrap:wrap; gap:10px; border-bottom:1px solid var(--line); }
+      .social-footer a { color:#b8b1b6; font:500 10px 'DM Mono',monospace; letter-spacing:.08em; text-transform:uppercase; }
+      .social-footer a:hover { color:var(--pink); }
       footer { padding:24px 30px 37px; color:#847d81; display:flex; justify-content:space-between; font:400 10px 'DM Mono',monospace; letter-spacing:.08em; text-transform:uppercase; }
       @media (max-width:840px) { .nav-links { display:none; } .hero,.manifesto,.aether-intro { grid-template-columns:1fr; } .hero-copy,.manifesto .statement,.aether-title { border-right:0; } .hero { min-height:0; } .hero-copy { padding:80px 25px 36px; min-height:565px; } .hero-media { min-height:470px; border-top:1px solid var(--line); } .roster { grid-template-columns:repeat(2,1fr); } .creator:nth-child(2) { border-right:0; } .creator { min-height:390px; border-bottom:1px solid var(--line); } .metrics { grid-template-columns:repeat(2,1fr); } .metric:nth-child(2) { border-right:0; } .metric { border-bottom:1px solid var(--line); } .model { grid-template-columns:1fr; } .card { border-right:0; border-bottom:1px solid var(--line); min-height:190px; } .card h3 { margin-top:32px; } }
       @media (max-width:510px) { .shell { width:min(100% - 20px,1340px); } nav { padding:0 16px; height:70px; } .button { padding:10px 11px; font-size:9px; } .section-header { padding:20px 18px; } .manifesto .statement,.aether-title { padding:42px 22px; } .principles { grid-template-columns:1fr; } .principle,.principle:nth-child(odd) { border-right:0; padding:25px 22px; min-height:0; } .aether-map { min-height:270px; } .roster { grid-template-columns:1fr; } .creator,.creator:nth-child(2) { min-height:435px; border-right:0; } .metrics { grid-template-columns:1fr; } .metric { border-right:0; min-height:145px; } footer { padding:22px 18px 30px; flex-direction:column; gap:10px; } }
+      @media (max-width:600px) { .modal-grid { grid-template-columns:1fr; } .modal-grid img { min-height:250px; max-height:320px; } .modal-copy { padding:28px 22px; } .social-footer { padding:20px 18px; } }
     </style>
   </head>
   <body>
     <div class="shell grid">
       <nav>
         <a class="brand" href="#top"><img src="/assets/landing/etherial-logo.png" alt="Etherial Agency logo" /><span>Etherial Agency<br /><small>에테리얼</small></span></a>
-        <div class="nav-links"><a href="#about">About</a><a href="#aether">ÆTHER</a><a href="#partners">Partners</a></div>
+        <div class="nav-links"><a href="#about">About</a><a href="#aether">ÆTHER</a><a href="#partners">Partners</a><a href="#bundles">Services</a></div>
         <a class="button" href="mailto:etherial@thealmaexperience.com?subject=Etherial%20Agency%20enquiry">Start a conversation <span class="arrow">↗</span></a>
       </nav>
       <main id="top">
         <section class="hero">
           <div class="hero-copy">
             <div>
-              <p class="eyebrow">Human-led creative direction · AI-powered production</p>
+              <p class="eyebrow">Human directed creative work · AI powered production</p>
               <h1>Beyond<br /><span class="outline">the</span> feed.</h1>
-              <p class="lead">Etherial Agency develops hybrid artists, original music and emotionally alive worlds where human storytelling meets artificial intelligence.</p>
+              <p class="lead">Etherial Agency develops Virtual Twin Artists, original music and emotionally alive worlds where human storytelling meets artificial intelligence.</p>
               <div class="actions"><a class="button primary" href="mailto:etherial@thealmaexperience.com?subject=Brand%20or%20media%20enquiry">Brands &amp; media <span class="arrow">↗</span></a><a class="button" href="#aether">Explore ÆTHER <span class="arrow">↓</span></a></div>
             </div>
             <div class="status mono"><span class="pulse"></span>Building the fifth element</div>
@@ -135,15 +155,15 @@
             <div class="media-ui"><p>Not avatars. A new form of artist presence, built around voice, character and human truth.</p><div class="orbit"><i>Æ</i></div></div>
           </div>
         </section>
-        <div class="ticker mono"><div>HYBRID ARTISTS <b>✦</b> ORIGINAL MUSIC <b>✦</b> ÆTHER UNIVERSE <b>✦</b> CULTURAL IP <b>✦</b> HUMAN PRESENCE <b>✦</b>&nbsp;&nbsp;HYBRID ARTISTS <b>✦</b> ORIGINAL MUSIC <b>✦</b> ÆTHER UNIVERSE <b>✦</b> CULTURAL IP <b>✦</b> HUMAN PRESENCE <b>✦</b></div></div>
+        <div class="ticker mono"><div>VIRTUAL TWIN ARTISTS <b>✦</b> ORIGINAL MUSIC <b>✦</b> ÆTHER UNIVERSE <b>✦</b> CULTURAL IP <b>✦</b> HUMAN PRESENCE <b>✦</b>&nbsp;&nbsp;VIRTUAL TWIN ARTISTS <b>✦</b> ORIGINAL MUSIC <b>✦</b> ÆTHER UNIVERSE <b>✦</b> CULTURAL IP <b>✦</b> HUMAN PRESENCE <b>✦</b></div></div>
         <section id="about">
           <div class="section-header"><span class="index">01 / About Etherial</span><h2>Made to be felt.</h2><span class="mono">↓</span></div>
           <div class="manifesto">
-            <div class="statement"><h3>Technology should expand a person, never flatten them.</h3><p>We make artists and characters with identity, continuity and emotional depth—not disposable content.</p></div>
+            <div class="statement"><h3>Technology should expand a person, never flatten them.</h3><p>We make artists and characters with identity, continuity and emotional depth, never disposable content.</p></div>
             <div class="principles">
-              <article class="principle"><h4>Hybrid artists</h4><p>Real people contribute their likeness, voice, lived perspective and personal Manifest. AI expands their presence.</p></article>
+              <article class="principle"><h4>Virtual Twin Artists</h4><p>Real people contribute their likeness, voice, lived perspective and personal Manifest. AI expands their presence.</p></article>
               <article class="principle"><h4>Full AI characters</h4><p>Fictional identities authored by a real creative perspective, developed with care for voice, world and consistency.</p></article>
-              <article class="principle"><h4>Creative IP</h4><p>Music, short-form narrative, community and future interactive experiences become one connected ecosystem.</p></article>
+              <article class="principle"><h4>Creative IP</h4><p>Music, short form narrative, community and future interactive experiences become one connected ecosystem.</p></article>
               <article class="principle"><h4>Human direction</h4><p>The emotional intention and creative choices are always human. AI is our production language.</p></article>
             </div>
           </div>
@@ -151,14 +171,14 @@
         <section id="aether">
           <div class="section-header"><span class="index">02 / The ÆTHER Universe</span><span class="mono">A world in motion</span></div>
           <div class="aether-intro">
-            <div class="aether-title"><p class="eyebrow">Four elements. One living world.</p><h3>ÆTHER<br />MOVES<br />BETWEEN.</h3><p>Artists, music, narrative and community live between the real and the digital. Etherial is the fifth element—the invisible force connecting them all.</p></div>
+            <div class="aether-title"><p class="eyebrow">Four elements. One living world.</p><h3>ÆTHER<br />MOVES<br />BETWEEN.</h3><p>Artists, music, narrative and community live between the real and the digital. Etherial is the fifth element, the invisible force connecting them all.</p></div>
             <div class="aether-map"><strong>Æ</strong><div class="nodes"><span class="node fire">FIRE / WONHOSO</span><span class="node water">WATER / ZION</span><span class="node air">AIR / IVY</span><span class="node earth">EARTH / YUA</span></div></div>
           </div>
           <div class="roster">
-            <article class="creator"><img src="/assets/landing/team-wonho.jpg" alt="Wonhoso" /><div class="creator-info"><span>01 · Fire</span><h3>Wonhoso</h3><p>Hybrid artist · music, narrative and global community.</p></div></article>
-            <article class="creator"><img src="/assets/landing/team-zion.jpg" alt="Zion" /><div class="creator-info"><span>02 · Water</span><h3>Zion</h3><p>Hybrid artist · fashion, movement and visual expression.</p></div></article>
-            <article class="creator"><img src="/assets/landing/team-evie.jpg" alt="Ivy" /><div class="creator-info"><span>03 · Air</span><h3>Ivy</h3><p>Hybrid artist · beauty, finance and women’s empowerment.</p></div></article>
-            <article class="creator"><img src="/assets/landing/team-yua.jpg" alt="Yua" /><div class="creator-info"><span>04 · Earth</span><h3>Yua</h3><p>Fully digital creator · kawaii culture, anime and spirituality.</p></div></article>
+            <button class="creator" type="button" data-artist="wonhoso" aria-label="Learn more about Wonhoso"><img src="/assets/landing/team-wonho.jpg" alt="Wonhoso" /><div class="creator-info"><span>01 · Fire</span><h3>Wonhoso</h3><p>Virtual Twin Artist. Music, narrative and global community.</p></div></button>
+            <button class="creator" type="button" data-artist="zion" aria-label="Learn more about Zion"><img src="/assets/landing/team-zion.jpg" alt="Zion" /><div class="creator-info"><span>02 · Water</span><h3>Zion</h3><p>Virtual Twin Artist. Fashion, movement and visual expression.</p></div></button>
+            <button class="creator" type="button" data-artist="ivy" aria-label="Learn more about Ivy"><img src="/assets/landing/team-evie.jpg" alt="Ivy" /><div class="creator-info"><span>03 · Air</span><h3>Ivy</h3><p>Virtual Twin Artist. Beauty, finance and women’s empowerment.</p></div></button>
+            <button class="creator" type="button" data-artist="yua" aria-label="Learn more about Yua"><img src="/assets/landing/team-yua.jpg" alt="Yua" /><div class="creator-info"><span>04 · Earth</span><h3>Yua</h3><p>Fully digital creator. Kawaii culture, anime and spirituality.</p></div></button>
           </div>
         </section>
         <section id="partners">
@@ -173,9 +193,21 @@
         <section>
           <div class="section-header"><span class="index">04 / Partnerships</span><h2>Build inside the story.</h2><span class="mono">→</span></div>
           <div class="model">
-            <article class="card"><span class="card-number">01</span><h3>Brand partnerships</h3><p>Purposeful product integrations across social, music and storytelling—built around the right artist, audience and cultural moment.</p></article>
-            <article class="card"><span class="card-number">02</span><h3>Original content</h3><p>Mini K-dramas, music projects and editorial worlds that turn attention into a lasting emotional connection.</p></article>
+            <article class="card"><span class="card-number">01</span><h3>Brand partnerships</h3><p>Purposeful product integrations across social, music and storytelling, built around the right artist, audience and cultural moment.</p></article>
+            <article class="card"><span class="card-number">02</span><h3>Original content</h3><p>Mini K dramas, music projects, editorial works and virtual K pop groups that turn attention into a lasting emotional connection.</p></article>
             <article class="card"><span class="card-number">03</span><h3>Universe &amp; IP</h3><p>A growing entertainment ecosystem designed for licensing, new formats and deeper audience interaction.</p></article>
+          </div>
+        </section>
+        <section id="mallow">
+          <div class="section-header"><span class="index">05 / Mallow</span><h2>The creative house.</h2><span class="mono">Production</span></div>
+          <div class="manifesto"><div class="statement"><h3>The work behind every world.</h3><p>Mallow is Etherial’s creative house. It produces music, videos, roster interviews, editorial work and the visual worlds that make each artist feel alive.</p></div><div class="principles"><article class="principle"><h4>Music and video</h4><p>Original releases, video production and performance worlds made for each artist.</p></article><article class="principle"><h4>Editorial production</h4><p>Interviews, visual stories and cultural moments that give the roster a deeper public voice.</p></article></div></div>
+        </section>
+        <section id="bundles">
+          <div class="section-header"><span class="index">06 / Services</span><h2>Make it real.</h2><span class="mono">Select a route</span></div>
+          <div class="model">
+            <article class="card"><span class="card-number">01</span><h3>Creative Video Bundle</h3><p>Five custom vertical videos designed for social campaigns, launches or product storytelling.</p><strong class="service-price">$500 USD</strong><a class="text-link" href="https://buy.stripe.com/dRmcN491DgV5cgLbGog7e00" target="_blank" rel="noreferrer">Get the bundle ↗</a></article>
+            <article class="card"><span class="card-number">02</span><h3>Custom Website</h3><p>A polished website built for a creator, artist, brand or project that needs a strong digital home.</p><strong class="service-price">$500 USD</strong><a class="text-link" href="https://buy.stripe.com/dRmcN491DgV5cgLbGog7e00" target="_blank" rel="noreferrer">Build my website ↗</a></article>
+            <article class="card"><span class="card-number">03</span><h3>Virtual Artist Launch</h3><p>Strategy, visual identity, content direction and a custom roadmap for your own digital artist.</p><strong class="service-price">Custom scope</strong><a class="text-link" href="mailto:etherial@thealmaexperience.com?subject=Virtual%20Artist%20Launch">Start a conversation ↗</a></article>
           </div>
         </section>
         <section class="contact">
@@ -183,7 +215,32 @@
           <div class="actions"><a class="button primary" href="mailto:etherial@thealmaexperience.com?subject=Etherial%20Agency%20enquiry">Contact Etherial <span class="arrow">↗</span></a></div>
         </section>
       </main>
+      <div class="social-footer"><a href="https://www.instagram.com/etherialagency.kr/" target="_blank" rel="noreferrer">Etherial Instagram ↗</a><a href="https://www.linkedin.com/in/etherial-agency-93454836b/" target="_blank" rel="noreferrer">Etherial LinkedIn ↗</a><a href="https://www.instagram.com/mallowentkr/" target="_blank" rel="noreferrer">Mallow Instagram ↗</a><a href="https://www.youtube.com/@mallowkr" target="_blank" rel="noreferrer">Mallow YouTube ↗</a><a href="https://www.tiktok.com/@mallowkr" target="_blank" rel="noreferrer">Mallow TikTok ↗</a><a href="mailto:etherial@thealmaexperience.com">Contact Etherial ↗</a></div>
       <footer><span>© Etherial Agency LLC</span><span>ÆTHER Universe · 2026</span></footer>
     </div>
+    <div class="artist-modal" id="artist-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-name"><div class="modal-card"><button class="modal-close" type="button" aria-label="Close">×</button><div class="modal-grid"><img id="modal-image" alt="" /><div class="modal-copy"><span class="eyebrow" id="modal-element"></span><h2 id="modal-name"></h2><p id="modal-description"></p><div class="modal-links" id="modal-links"></div></div></div></div></div>
+    <script>
+      const artists = {
+        wonhoso: { name: 'Wonhoso', element: '01 · Fire · Virtual Twin Artist', image: '/assets/landing/team-wonho.jpg', description: 'A virtual twin artist led by a real human presence. Wonhoso brings music, narrative and a global fan community into the ÆTHER universe.', links: [['Instagram','https://www.instagram.com/wonhoso_/'],['TikTok','https://www.tiktok.com/@iwonho'],['Facebook','https://www.facebook.com/officialwonhoso.'],['YouTube','https://www.youtube.com/@Wonhoso.'],['Threads','https://www.threads.com/@iwonhoso'],['Patreon','https://www.patreon.com/cw/Wohonso_.'],['Fanvue','https://www.fanvue.com/wonhoso.'],['Xiaohongshu','https://www.xiaohongshu.com/user/profile/6785ce7800000000080185a9'],['Brand deals','mailto:wonho@thealmaexperience.com']] },
+        zion: { name: 'Zion', element: '02 · Water · Virtual Twin Artist', image: '/assets/landing/team-zion.jpg', description: 'A virtual twin artist whose world brings fashion, movement and visual expression into a protected and emotionally honest form of presence.', links: [['Instagram','https://www.instagram.com/itszionmin/'],['TikTok','https://www.tiktok.com/@zionmin_'],['Facebook','https://www.facebook.com/izionmin']] },
+        ivy: { name: 'Ivy', element: '03 · Air · Virtual Twin Artist', image: '/assets/landing/team-evie.jpg', description: 'A virtual twin artist exploring beauty, financial confidence and women’s empowerment through style, voice and meaningful connection.', links: [['Instagram','https://www.instagram.com/itseviekim/']] },
+        yua: { name: 'Yua', element: '04 · Earth · Fully Digital Creator', image: '/assets/landing/team-yua.jpg', description: 'A fully digital creator whose world blends kawaii culture, anime, spirituality and entertainment.', links: [['Instagram','https://www.instagram.com/yua_0x0/']] }
+      };
+      const modal = document.getElementById('artist-modal');
+      const closeModal = () => { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); };
+      document.querySelectorAll('[data-artist]').forEach(card => card.addEventListener('click', () => {
+        const artist = artists[card.dataset.artist];
+        document.getElementById('modal-image').src = artist.image;
+        document.getElementById('modal-image').alt = artist.name;
+        document.getElementById('modal-element').textContent = artist.element;
+        document.getElementById('modal-name').textContent = artist.name;
+        document.getElementById('modal-description').textContent = artist.description;
+        document.getElementById('modal-links').innerHTML = artist.links.map(([label, url]) => `<a href="${url}" target="${url.startsWith('mailto:') ? '_self' : '_blank'}" rel="noreferrer">${label} ↗</a>`).join('');
+        modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
+      }));
+      document.querySelector('.modal-close').addEventListener('click', closeModal);
+      modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
+      document.addEventListener('keydown', event => { if (event.key === 'Escape') closeModal(); });
+    </script>
   </body>
 </html>
