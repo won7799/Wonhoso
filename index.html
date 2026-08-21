@@ -67,5 +67,13 @@
       };
       Object.entries(cardDescriptions).forEach(([name,description])=>{artistData[name].description=description;const card=[...document.querySelectorAll('.creator')].find(item=>item.querySelector('h3').textContent===name);card.querySelector('.creator-info p').textContent=description;});
     </script>
+    <script>
+      const hybridProfiles={
+        Wonhoso:{card:'Music, performance, culture and a growing global community.',modal:'Virtual Twin IP. Music, performance, culture and a growing global community.'},
+        Zion:{card:'Fashion, movement, visual culture and contemporary entertainment.',modal:'Virtual Twin IP. Fashion, movement, visual culture and contemporary entertainment.'},
+        Ivy:{card:'Beauty, culture, business and a growing female focused community.',modal:'Virtual Twin IP. Beauty, culture, business and a growing female focused community.'}
+      };
+      Object.entries(hybridProfiles).forEach(([name,profile])=>{artistData[name].description=profile.modal;const card=[...document.querySelectorAll('.creator')].find(item=>item.querySelector('h3').textContent===name);card.querySelector('.creator-info span').textContent='Hybrid Artist';card.querySelector('.creator-info p').textContent=profile.card;});
+    </script>
   </body>
 </html>
