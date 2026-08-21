@@ -57,5 +57,15 @@
     </script>
     <style>.creator.alric>img{content:url('/assets/landing/team-aelric.jpg?v=20260821')}.creator-info .text-link{display:none}</style>
     <script>artistData.Aelric.role='Digital Native Artist';artistData.Aelric.description='A fully digital indie singer with a distinct voice, identity and artistic world.';document.querySelector('.creator.alric .creator-info span').textContent='Digital Native Artist';document.querySelector('.creator.alric .creator-info p').textContent='A fully digital indie singer with a distinct voice, identity and artistic world.';</script>
+    <script>
+      const cardDescriptions={
+        Wonhoso:'Hybrid Artist IP. Music, performance, culture and a growing global community.',
+        Aelric:'Digital Native Artist IP. A fully digital indie singer with a distinct voice, identity and artistic world.',
+        Zion:'Hybrid Artist IP. Fashion, movement, visual culture and contemporary entertainment.',
+        Ivy:'Hybrid Artist IP. Beauty, culture, business and a growing female focused community.',
+        Yua:'Digital Native Artist IP. Kawaii culture, anime inspired storytelling and a fully digital creative identity.'
+      };
+      Object.entries(cardDescriptions).forEach(([name,description])=>{artistData[name].description=description;const card=[...document.querySelectorAll('.creator')].find(item=>item.querySelector('h3').textContent===name);card.querySelector('.creator-info p').textContent=description;});
+    </script>
   </body>
 </html>
