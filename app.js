@@ -34,7 +34,7 @@
       const portrait=el('div','artist-portrait');const image=el('img');image.src=artist.image;image.alt=artist.name;image.loading='lazy';image.width=900;image.height=1125;image.style.objectPosition=artist.position;portrait.append(image,el('span','artist-index',`0${index+1} / ETHERIAL`),el('span','artist-profile-arrow','↗'));portrait.lastChild.setAttribute('aria-hidden','true');
       const meta=el('div','artist-meta');meta.append(el('span','artist-type',artist.type),el('h3','',artist.name),el('p','artist-profession',artist.profession),el('p','artist-discipline',artist.discipline));card.append(portrait,meta);track.append(card);
     });
-    requestAnimationFrame(()=>{updateGallery();refreshPortraitMotion();});
+    requestAnimationFrame(()=>{setupArtistGallery();updateGallery();});
   }
   function workAction(item,label,classes) {
     const node=item.media?el('button',classes,label):externalLink(label,item.url,classes);
@@ -74,12 +74,11 @@
     $$('[data-en][data-ko]').forEach(node => {node.textContent=node.dataset[language].replace(/\\n/g,'\n');});
     $$('[data-language]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.language===language)));
     $('#artists-prev').setAttribute('aria-label',language==='ko'?'이전 아티스트':'Previous artists');$('#artists-next').setAttribute('aria-label',language==='ko'?'다음 아티스트':'Next artists');
-    renderArtists();renderHighlights();renderExcerpts();if(activeArtist && profileDialog.open) renderProfile(activeArtist);updateMotionLabel();normalizeArrows();
+    renderArtists();renderHighlights();renderExcerpts();if(activeArtist && profileDialog.open) renderProfile(activeArtist);updateMotionLabel();normalizeArrows();updateGalleryLabel();
   }
   $$('[data-language]').forEach(button=>button.addEventListener('click',()=>setLanguage(button.dataset.language)));
-  function updateGallery(){const max=track.scrollWidth-track.clientWidth;$('#artists-prev').disabled=track.scrollLeft<4;$('#artists-next').disabled=track.scrollLeft>max-4;}
-  track.addEventListener('scroll',updateGallery,{passive:true});window.addEventListener('resize',updateGallery,{passive:true});
-  function moveGallery(direction){const card=$('.artist-card',track);if(card)track.scrollBy({left:direction*(card.getBoundingClientRect().width+20),behavior:reducedMotion.matches?'instant':'smooth'});}
+  function updateGallery(){const scrollable=track.scrollWidth>track.clientWidth+2;$('#artists-prev').disabled=!scrollable;$('#artists-next').disabled=!scrollable;}
+  function moveGallery(direction){navigateGallery(direction);}
   $('#artists-prev').addEventListener('click',()=>moveGallery(-1));$('#artists-next').addEventListener('click',()=>moveGallery(1));
   const menu=$('#mobile-nav');const menuButton=$('.menu-toggle');
   function setMenu(open){if(open){menuLastFocus=document.activeElement;}menuButton.setAttribute('aria-expanded',String(open));menuButton.setAttribute('aria-label',open?'Close menu':'Open menu');menu.hidden=!open;menu.inert=!open;document.body.classList.toggle('menu-open',open);if(open){$('a',menu).focus();}else if(menuLastFocus){menuLastFocus.focus({preventScroll:true});}}
@@ -102,7 +101,7 @@
     layout.append(img,body);const container=$('#artist-dialog-content');container.replaceChildren(layout);if(artist.editorial?.length){const gallery=el('section','profile-editorial');gallery.setAttribute('aria-label',language==='ko'?'추가 포트레이트':'Additional portraits');artist.editorial.forEach(item=>{const figure=el('figure');const image=el('img');image.src=item.image;image.alt=artist.name+' — '+tr(item.caption);image.loading='lazy';figure.append(image,el('figcaption','micro',item.caption));gallery.append(figure);});container.append(gallery);}
     normalizeArrows(container);
   }
-  function openProfile(id){const artist=content.artists.find(item=>item.id===id);if(!artist)return;activeArtist=artist;renderProfile(artist);openDialog(profileDialog);}
+  function openProfile(id){const artist=content.artists.find(item=>item.id===id);if(!artist)return;activeArtist=artist;pauseGalleryByUser();renderProfile(artist);openDialog(profileDialog);}
   function openMedia(item){
     const media=typeof item==='string'?content.media[item]:item;if(!media)return;
     text($('#media-title'),media.title);text($('#media-subtitle'),media.subtitle);const container=$('#media-container');container.replaceChildren();$('#media-note').replaceChildren();
@@ -132,105 +131,141 @@
   mediaDialog.addEventListener('close',()=>{if(lastHeroPermission&&heroInView&&!document.hidden)playHero();});
   reducedMotion.addEventListener('change',event=>{if(event.matches){lastHeroPermission=false;hero.pause();hero.classList.remove('user-play');}});
 
-  // A single scroll timeline, not independent card reveals. All poses resolve to
-  // their original layout, so there is no image morphing or permanent reordering.
-  function portraitPose(progress,index,count,width,viewport) {
-    const clamp=n=>Math.max(0,Math.min(1,n));
-    const ease=(a,b)=>{const t=clamp((progress-a)/(b-a));return t*t*(3-2*t);};
-    const offset=index-(count-1)/2;
-    const rank=Math.abs(offset);
-    const arrival=ease(.02+rank*.035,.45+rank*.035);
-    const spread=ease(.42,.89);
-    const finish=1-spread;
-    const step=width+20;
-    return {
-      x:-offset*step*.69*finish + offset*16*(1-arrival),
-      y:(-70-rank*20)*(1-arrival) + Math.abs(offset)*9*finish,
-      z:(-360-rank*65)*(1-arrival) + (2-rank)*30*finish,
-      rx:18*(1-arrival)+7*finish,
-      ry:(-18+offset*7)*finish,
-      rz:offset*5.5*finish,
-      scale:1-.33*finish,
-      labels:ease(.76,.93),
-      cameraX:13*finish,
-      cameraY:-13*finish,
-      cameraZ:-3.5*finish,
-      cameraScale:1-.09*finish,
-      shadow:.38*finish
-    };
+  // Native scrolling keeps the portraits sharp and the drag/swipe interaction
+  // familiar. A decorative second run makes the wrap visually continuous.
+  const galleryButton=$('#gallery-toggle');
+  const galleryStatus=$('#gallery-status');
+  let galleryWantsPlay=!reducedMotion.matches;
+  let galleryHover=false;
+  let galleryFocused=false;
+  let galleryPointer=false;
+  let galleryInView=false;
+  let galleryFrame=0;
+  let galleryLastTime=0;
+  let galleryPosition=0;
+  let galleryCycle=0;
+  let galleryStep=0;
+  let galleryNavigating=false;
+  let galleryNavigationTimer=0;
+  let galleryDrag=null;
+  let suppressGalleryClick=false;
+  const galleryCanMove=()=>galleryWantsPlay&&!galleryHover&&!galleryFocused&&!galleryPointer&&galleryInView&&!document.hidden&&!profileDialog.open&&!mediaDialog.open&&galleryCycle>0;
+  function updateGalleryLabel(){
+    if(!galleryButton)return;
+    text($('.gallery-toggle-label',galleryButton),galleryWantsPlay?{en:'Pause gallery',ko:'갤러리 일시정지'}:{en:'Play gallery',ko:'갤러리 재생'});
+    galleryButton.setAttribute('aria-pressed',String(galleryWantsPlay));
+    $('.motion-icon',galleryButton).classList.toggle('is-playing',galleryWantsPlay);
+    text(galleryStatus,!galleryWantsPlay?{en:'Paused · Explore at your pace',ko:'일시정지 · 원하는 속도로 둘러보세요'}:galleryCanMove()?{en:'Gallery moving',ko:'갤러리 재생 중'}:{en:'Paused while you explore',ko:'둘러보는 동안 잠시 멈춥니다'});
   }
-  const portraitMedia=matchMedia('(min-width:901px) and (min-height:601px)');
-  const sequence=$('#artist-sequence');
-  const skipPortraits=$('#skip-artist-motion');
-  let portraitFrame=0;
-  let portraitStart=0;
-  let portraitRange=1;
-  let portraitWidth=0;
-  let portraitEnabled=false;
-  let portraitForcedFinal=false;
-  let portraitSkipped=false;
-  let mobilePortraitEnabled=false;
-  function resetPortraits(){
-    track.style.removeProperty('--portrait-camera');
-    $$('.artist-card',track).forEach(card=>{
-      ['--portrait-transform','--portrait-labels','--portrait-shadow'].forEach(name=>card.style.removeProperty(name));
+  function normalizeGalleryPosition(){
+    if(!galleryCycle)return;
+    if(track.scrollLeft>=galleryCycle)track.scrollLeft-=galleryCycle;
+    galleryPosition=track.scrollLeft;
+  }
+  function galleryTick(now){
+    galleryFrame=0;
+    if(!galleryCanMove()){galleryLastTime=0;updateGalleryLabel();return;}
+    const elapsed=galleryLastTime?Math.min(64,now-galleryLastTime):0;
+    galleryLastTime=now;
+    galleryPosition+=(window.innerWidth<=760?23:34)*elapsed/1000;
+    if(galleryPosition>=galleryCycle)galleryPosition-=galleryCycle;
+    track.scrollLeft=galleryPosition;
+    galleryFrame=requestAnimationFrame(galleryTick);
+  }
+  function reconcileGallery(){
+    const moving=galleryCanMove();
+    if(!moving&&galleryFrame){cancelAnimationFrame(galleryFrame);galleryFrame=0;galleryLastTime=0;}
+    if(moving&&!galleryFrame){galleryPosition=track.scrollLeft;galleryLastTime=0;galleryFrame=requestAnimationFrame(galleryTick);}
+    updateGalleryLabel();
+  }
+  function pauseGalleryByUser(){galleryWantsPlay=false;reconcileGallery();}
+  function measureGallery(){
+    const originals=$$('.artist-card:not(.gallery-copy)',track);
+    const first=originals[0];const duplicate=$('.gallery-copy',track);
+    if(!first||!duplicate)return;
+    galleryStep=(originals[1]?.offsetLeft||0)-first.offsetLeft;
+    galleryCycle=duplicate.offsetLeft-first.offsetLeft;
+    if(galleryCycle<=track.clientWidth)galleryCycle=0;
+    normalizeGalleryPosition();updateGallery();reconcileGallery();
+  }
+  function setupArtistGallery(){
+    const originals=$$('.artist-card:not(.gallery-copy)',track);
+    $$('.gallery-copy',track).forEach(copy=>copy.remove());
+    originals.forEach(card=>{
+      const copy=el('div','artist-card gallery-copy');copy.dataset.artist=card.dataset.artist;
+      copy.setAttribute('aria-hidden','true');
+      [...card.childNodes].forEach(child=>copy.append(child.cloneNode(true)));
+      $$('img',copy).forEach(image=>image.alt='');
+      track.append(copy);
     });
-    sequence.classList.remove('is-active');
+    // Only the five real buttons participate in the keyboard/accessibility tree.
+    // Pointer activation on an identical decorative copy opens the same profile.
+    track.scrollLeft=0;galleryPosition=0;
+    const rect=track.getBoundingClientRect();galleryInView=rect.bottom>0&&rect.top<window.innerHeight;
+    normalizeArrows(track);measureGallery();
   }
-  function drawPortraitMotion(){
-    portraitFrame=0;
-    if(mobilePortraitEnabled){drawMobilePortraits();return;}
-    if(!portraitEnabled||portraitSkipped)return;
-    const progress=portraitForcedFinal?1:Math.max(0,Math.min(1,(window.scrollY-portraitStart)/portraitRange));
-    const cards=$$('.artist-card',track);
-    sequence.classList.toggle('is-active',progress>0&&progress<1);
-    cards.forEach((card,index)=>{
-      const pose=portraitPose(progress,index,cards.length,portraitWidth,window.innerWidth);
-      card.style.setProperty('--portrait-transform',`translate3d(${pose.x.toFixed(2)}px,${pose.y.toFixed(2)}px,${pose.z.toFixed(2)}px) rotateX(${pose.rx.toFixed(2)}deg) rotateY(${pose.ry.toFixed(2)}deg) rotateZ(${pose.rz.toFixed(2)}deg) scale(${pose.scale.toFixed(4)})`);
-      card.style.setProperty('--portrait-labels',pose.labels.toFixed(4));
-      card.style.setProperty('--portrait-shadow',pose.shadow.toFixed(3));
-      if(index===0)track.style.setProperty('--portrait-camera',`rotateX(${pose.cameraX.toFixed(2)}deg) rotateY(${pose.cameraY.toFixed(2)}deg) rotateZ(${pose.cameraZ.toFixed(2)}deg) scale(${pose.cameraScale.toFixed(4)})`);
-    });
+  function finishGalleryNavigation(){
+    if(!galleryNavigating)return;
+    galleryNavigating=false;clearTimeout(galleryNavigationTimer);normalizeGalleryPosition();
   }
-  function drawMobilePortraits(){
-    if(!mobilePortraitEnabled)return;
-    const width=window.innerWidth;
-    const entry=Math.max(0,Math.min(1,(window.innerHeight-sequence.getBoundingClientRect().top)/(window.innerHeight*.65)));
-    $$('.artist-card',track).forEach(card=>{
-      const rect=card.getBoundingClientRect();
-      const offset=Math.max(-1,Math.min(1,((rect.left+rect.width/2)-width/2)/width));
-      const angle=portraitForcedFinal?0:-offset*16;
-      const scale=portraitForcedFinal?1:1-Math.abs(offset)*.055-(1-entry)*.055;
-      card.style.setProperty('--portrait-transform',`perspective(900px) rotateY(${angle.toFixed(2)}deg) rotateX(${((1-entry)*9).toFixed(2)}deg) scale(${scale.toFixed(4)})`);
-    });
+  function navigateGallery(direction){
+    if(!galleryCycle)return;
+    pauseGalleryByUser();finishGalleryNavigation();
+    if(direction<0&&track.scrollLeft<galleryStep){track.scrollLeft+=galleryCycle;}
+    galleryNavigating=true;
+    track.scrollBy({left:direction*galleryStep,behavior:reducedMotion.matches?'instant':'smooth'});
+    galleryNavigationTimer=setTimeout(finishGalleryNavigation,600);
   }
-  function queuePortraitMotion(){if((portraitEnabled||mobilePortraitEnabled)&&!portraitSkipped&&!portraitFrame)portraitFrame=requestAnimationFrame(drawPortraitMotion);} 
-  function refreshPortraitMotion(){
-    portraitEnabled=portraitMedia.matches&&!reducedMotion.matches;
-    mobilePortraitEnabled=!portraitMedia.matches&&!reducedMotion.matches;
-    document.documentElement.classList.toggle('has-mobile-portrait-motion',mobilePortraitEnabled);
-    document.documentElement.classList.toggle('has-portrait-motion',portraitEnabled);
-    $('.artist-motion-footer').hidden=!portraitEnabled;
-    if(!portraitEnabled||portraitSkipped){resetPortraits();if(mobilePortraitEnabled)queuePortraitMotion();return;}
-    portraitStart=sequence.getBoundingClientRect().top+window.scrollY;
-    portraitRange=Math.max(1,sequence.offsetHeight-$('.artist-sticky',sequence).offsetHeight);
-    portraitWidth=$('.artist-card',track)?.offsetWidth||200;
-    queuePortraitMotion();
-  }
-  window.addEventListener('scroll',queuePortraitMotion,{passive:true});
-  track.addEventListener('scroll',queuePortraitMotion,{passive:true});
-  window.addEventListener('resize',refreshPortraitMotion,{passive:true});
-  portraitMedia.addEventListener('change',refreshPortraitMotion);
-  reducedMotion.addEventListener('change',refreshPortraitMotion);
-  // Keyboard access reveals the complete roster immediately, without trapping
-  // focus or requiring the visitor to scrub through the visual sequence.
-  track.addEventListener('focusin',()=>{portraitForcedFinal=true;queuePortraitMotion();});
-  skipPortraits.addEventListener('click',()=>{
-    portraitSkipped=true;portraitForcedFinal=true;sequence.classList.add('is-skipped');resetPortraits();
-    $('#artists-title').scrollIntoView({behavior:'instant',block:'start'});
-    $('.artist-card',track)?.focus({preventScroll:true});
+  galleryButton.addEventListener('click',()=>{
+    galleryWantsPlay=!galleryWantsPlay;
+    if(galleryWantsPlay){finishGalleryNavigation();normalizeGalleryPosition();}
+    reconcileGallery();
   });
-  setLanguage('en');
-  refreshPortraitMotion();
+  track.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse'){galleryHover=true;reconcileGallery();}});
+  track.addEventListener('pointerleave',event=>{if(event.pointerType==='mouse'){galleryHover=false;reconcileGallery();}});
+  track.addEventListener('focusin',()=>{galleryFocused=true;reconcileGallery();});
+  track.addEventListener('focusout',()=>{requestAnimationFrame(()=>{galleryFocused=track.contains(document.activeElement);reconcileGallery();});});
+  track.addEventListener('pointerdown',event=>{
+    if(event.button!==0)return;
+    galleryPointer=true;reconcileGallery();finishGalleryNavigation();
+    galleryDrag={id:event.pointerId,type:event.pointerType,x:event.clientX,y:event.clientY,left:track.scrollLeft,moved:false};
+  });
+  track.addEventListener('pointermove',event=>{
+    if(!galleryDrag||galleryDrag.id!==event.pointerId)return;
+    const dx=event.clientX-galleryDrag.x;const dy=event.clientY-galleryDrag.y;
+    if(!galleryDrag.moved&&Math.abs(dx)>7&&Math.abs(dx)>Math.abs(dy)){
+      galleryDrag.moved=true;suppressGalleryClick=true;pauseGalleryByUser();track.classList.add('is-dragging');
+      if(event.pointerType==='mouse')track.setPointerCapture(event.pointerId);
+    }
+    if(galleryDrag.moved&&event.pointerType==='mouse'){
+      event.preventDefault();let target=galleryDrag.left-dx;
+      if(target<0){galleryDrag.left+=galleryCycle;target+=galleryCycle;}
+      if(target>=galleryCycle){galleryDrag.left-=galleryCycle;target-=galleryCycle;}
+      track.scrollLeft=target;galleryPosition=target;
+    }
+  });
+  function endGalleryPointer(event){
+    if(!galleryDrag||galleryDrag.id!==event.pointerId)return;
+    if(galleryDrag.moved||event.type==='pointercancel')pauseGalleryByUser();
+    if(track.hasPointerCapture(event.pointerId))track.releasePointerCapture(event.pointerId);
+    galleryDrag=null;galleryPointer=false;track.classList.remove('is-dragging');
+    normalizeGalleryPosition();reconcileGallery();
+    setTimeout(()=>{suppressGalleryClick=false;},0);
+  }
+  window.addEventListener('pointerup',endGalleryPointer);
+  window.addEventListener('pointercancel',endGalleryPointer);
+  track.addEventListener('click',event=>{if(suppressGalleryClick){event.preventDefault();event.stopPropagation();}},{capture:true});
+  track.addEventListener('dragstart',event=>event.preventDefault());
+  track.addEventListener('wheel',event=>{if(Math.abs(event.deltaX)>2){pauseGalleryByUser();}},{passive:true});
+  track.addEventListener('scrollend',()=>{finishGalleryNavigation();if(!galleryCanMove())normalizeGalleryPosition();});
+  window.addEventListener('resize',()=>{finishGalleryNavigation();measureGallery();},{passive:true});
+  document.addEventListener('visibilitychange',reconcileGallery);
+  window.addEventListener('blur',()=>{if(galleryDrag){galleryDrag=null;galleryPointer=false;track.classList.remove('is-dragging');pauseGalleryByUser();}});
+  [profileDialog,mediaDialog].forEach(dialog=>dialog.addEventListener('close',reconcileGallery));
+  reducedMotion.addEventListener('change',event=>{if(event.matches)galleryWantsPlay=false;reconcileGallery();});
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(entries=>{galleryInView=entries[0].isIntersecting;reconcileGallery();},{threshold:.08}).observe(track);
+  }
 
+  setLanguage('en');
 })();
