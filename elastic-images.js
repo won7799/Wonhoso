@@ -86,7 +86,8 @@
   const connection = root.navigator.connection;
   const textures = new Map();
   const cleanups = [];
-  let canvas = null, gl = null, program = null, buffer = null, uniforms = null;
+  let canvas = null, webglCanvas = null, gl = null, program = null, buffer = null, uniforms = null;
+  let renderer = '', svgRoot = null, svgFilter = null, svgField = null, svgOffset = null, svgMatrix = null, svgDisplace = null;
   let active = null, pending = null, frame = 0, lastFrame = 0, generation = 0;
   let failed = false, contextLost = false, destroyed = false, initialized = false;
   let textureEdge = MAX_TEXTURE_EDGE;
@@ -120,7 +121,7 @@
     cleanups.push(() => target.removeEventListener(type, handler, options));
   }
   function enabled() {
-    return !destroyed && !failed && !contextLost && !reducedMotion.matches && finePointer.matches && !connection?.saveData;
+    return !destroyed && !failed && (!contextLost || renderer === 'svg') && !reducedMotion.matches && finePointer.matches && !connection?.saveData;
   }
   function blocked() {
     return !enabled() || document.hidden || document.body?.classList.contains('dialog-open') ||
@@ -159,6 +160,58 @@
     reset();
     disposeResources();
     failed = true;
+  }
+  function svgNode(name, attributes = {}) {
+    const node = document.createElementNS('http://www.w3.org/2000/svg', name);
+    Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, String(value)));
+    return node;
+  }
+  function createSVGRenderer() {
+    if (renderer === 'svg' && canvas) return true;
+    try {
+      // An opaque radial scalar field is shifted to the pointer. The matrix
+      // turns its R channel into independent signed R/G displacement channels.
+      // Forcing alpha to one also makes empty offset pixels neutral (0.5,0.5).
+      const field = '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><defs><radialGradient id="r"><stop offset="0" stop-color="white"/><stop offset=".2" stop-color="#eeeeee"/><stop offset=".4" stop-color="#b0b0b0"/><stop offset=".6" stop-color="#606060"/><stop offset=".8" stop-color="#202020"/><stop offset="1" stop-color="black"/></radialGradient></defs><rect width="256" height="256" fill="url(#r)"/></svg>';
+      svgRoot = svgNode('svg', { width: 0, height: 0, 'aria-hidden': 'true', focusable: 'false' });
+      svgRoot.dataset.etherialElasticDefinition = '';
+      svgRoot.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
+      const definitions = svgNode('defs');
+      svgFilter = svgNode('filter', {
+        id: 'etherial-elastic-displacement', x: 0, y: 0,
+        filterUnits: 'userSpaceOnUse', primitiveUnits: 'userSpaceOnUse', 'color-interpolation-filters': 'sRGB'
+      });
+      svgField = svgNode('feImage', {
+        href: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(field),
+        preserveAspectRatio: 'none', result: 'elastic-field'
+      });
+      svgOffset = svgNode('feOffset', { in: 'elastic-field', result: 'elastic-offset', dx: 0, dy: 0 });
+      svgMatrix = svgNode('feColorMatrix', { in: 'elastic-offset', type: 'matrix', result: 'elastic-vector', 'color-interpolation-filters': 'sRGB' });
+      svgDisplace = svgNode('feDisplacementMap', { in: 'SourceGraphic', in2: 'elastic-vector', xChannelSelector: 'R', yChannelSelector: 'G', scale: 0 });
+      svgFilter.append(svgField, svgOffset, svgMatrix, svgDisplace);
+      definitions.append(svgFilter);
+      svgRoot.append(definitions);
+      document.body.append(svgRoot);
+      canvas = document.createElement('img');
+      canvas.className = 'elastic-image-canvas elastic-image-svg';
+      canvas.dataset.etherialElastic = '';
+      canvas.dataset.elasticRenderer = 'svg';
+      canvas.alt = '';
+      canvas.draggable = false;
+      canvas.setAttribute('aria-hidden', 'true');
+      canvas.style.cssText = 'position:absolute;display:block;pointer-events:none;z-index:0;visibility:hidden;max-width:none;';
+      listen(canvas, 'load', () => { if (renderer === 'svg' && active) schedule(); });
+      listen(canvas, 'error', () => { if (renderer === 'svg' && active) reset(); });
+      renderer = 'svg';
+      document.documentElement.dataset.elasticImages = 'ready-svg';
+      document.documentElement.dataset.elasticRenderer = 'svg';
+      return true;
+    } catch (error) {
+      if (svgRoot) svgRoot.remove();
+      svgRoot = null;
+      fail(error);
+      return false;
+    }
   }
   function createProgram() {
     const vertex = gl.createShader(gl.VERTEX_SHADER);
@@ -202,27 +255,33 @@
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     gl.clearColor(0, 0, 0, 0);
     textureEdge = Math.min(MAX_TEXTURE_EDGE, gl.getParameter(gl.MAX_TEXTURE_SIZE));
-    document.documentElement.dataset.elasticImages = 'ready';
+    document.documentElement.dataset.elasticImages = 'ready-webgl';
+    document.documentElement.dataset.elasticRenderer = 'webgl';
   }
   function ensureRenderer() {
+    if (renderer === 'svg') return true;
     if (program) return true;
     if (failed || contextLost || destroyed) return false;
     try {
-      if (!canvas) {
-        canvas = document.createElement('canvas');
+      if (!webglCanvas) {
+        webglCanvas = document.createElement('canvas');
+        canvas = webglCanvas;
         canvas.className = 'elastic-image-canvas';
         canvas.dataset.etherialElastic = '';
         canvas.setAttribute('aria-hidden', 'true');
+        canvas.dataset.elasticRenderer = 'webgl';
         canvas.style.cssText = 'position:absolute;display:block;pointer-events:none;z-index:0;visibility:hidden;max-width:none;';
         listen(canvas, 'webglcontextlost', event => {
           event.preventDefault();
           contextLost = true;
           reset();
           disposeResources();
+          createSVGRenderer();
         });
         listen(canvas, 'webglcontextrestored', () => {
           if (destroyed) return;
           contextLost = false;
+          if (renderer === 'svg') return;
           try { createProgram(); } catch (error) { fail(error); }
         });
         gl = canvas.getContext('webgl', {
@@ -232,8 +291,14 @@
         if (!gl) throw new Error('WebGL unavailable');
       }
       createProgram();
+      renderer = 'webgl';
       return true;
-    } catch (error) { fail(error); return false; }
+    } catch (error) {
+      document.documentElement.dataset.elasticWebgl = 'unavailable';
+      disposeResources();
+      if (webglCanvas) webglCanvas.remove();
+      return createSVGRenderer();
+    }
   }
   function textureFor(image) {
     const key = image.currentSrc || image.src;
@@ -300,9 +365,27 @@
     canvas.style.top = (state.image.offsetTop + parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop)) + 'px';
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
-    canvas.style.filter = style.filter;
+    canvas.style.filter = renderer === 'svg'
+      ? 'url("#etherial-elastic-displacement")' + (style.filter === 'none' ? '' : ' ' + style.filter)
+      : style.filter;
     canvas.style.transform = style.transform;
     canvas.style.transformOrigin = style.transformOrigin;
+    if (renderer === 'svg') {
+      canvas.style.objectFit = style.objectFit;
+      canvas.style.objectPosition = style.objectPosition;
+      svgFilter.setAttribute('width', String(width));
+      svgFilter.setAttribute('height', String(height));
+      [svgOffset, svgMatrix, svgDisplace].forEach(node => {
+        node.setAttribute('x', '0'); node.setAttribute('y', '0');
+        node.setAttribute('width', String(width)); node.setAttribute('height', String(height));
+      });
+      const diameter = Math.min(width, height) * 1.05;
+      svgField.setAttribute('x', String((width - diameter) / 2));
+      svgField.setAttribute('y', String((height - diameter) / 2));
+      svgField.setAttribute('width', String(diameter));
+      svgField.setAttribute('height', String(diameter));
+      return true;
+    }
     const ratio = Math.min(MAX_PIXEL_RATIO, root.devicePixelRatio || 1);
     const pixelWidth = Math.max(1, Math.round(width * ratio));
     const pixelHeight = Math.max(1, Math.round(height * ratio));
@@ -314,6 +397,23 @@
     return true;
   }
   function draw(state) {
+    if (renderer === 'svg') {
+      const pullX = state.spring.x * state.width;
+      const pullY = state.spring.y * state.height;
+      // A tight dynamic scale uses the available channel range and avoids the
+      // coarse displacement steps produced by a large constant 8-bit scale.
+      const scale = Math.max(1, 2 * Math.max(Math.abs(pullX), Math.abs(pullY)));
+      svgOffset.setAttribute('dx', String((state.pointer.x - 0.5) * state.width));
+      svgOffset.setAttribute('dy', String((state.pointer.y - 0.5) * state.height));
+      svgMatrix.setAttribute('values', [
+        -pullX / scale, 0, 0, 0, 0.5,
+        -pullY / scale, 0, 0, 0, 0.5,
+        0, 0, 0, 0, 0.5,
+        0, 0, 0, 0, 1
+      ].join(' '));
+      svgDisplace.setAttribute('scale', String(scale));
+      return canvas.complete && canvas.naturalWidth > 0;
+    }
     gl.useProgram(program);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, state.texture);
@@ -325,6 +425,7 @@
     gl.uniform1f(uniforms.uTime, state.time);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    return true;
   }
   function schedule() {
     if (!frame && active && !blocked()) frame = root.requestAnimationFrame(tick);
@@ -341,8 +442,7 @@
     state.pointer.y += (state.targetPointer.y - state.pointer.y) * (1 - Math.exp(-24 * elapsed));
     try {
       if (!measure(state)) { reset(); return; }
-      draw(state);
-      canvas.style.visibility = 'visible';
+      canvas.style.visibility = draw(state) ? 'visible' : 'hidden';
     } catch (error) { fail(error); return; }
     if (isSettled(state.spring, state.hold.x, state.hold.y)) {
       lastFrame = 0;
@@ -372,7 +472,12 @@
       }
       if (generation !== token || blocked() || !image.isConnected || !image.naturalWidth) return;
       if (!ensureRenderer()) return;
-      const texture = textureFor(image);
+      const texture = renderer === 'webgl' ? textureFor(image) : null;
+      if (renderer === 'svg') {
+        canvas.src = image.currentSrc || image.src;
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+      }
       const wrapper = image.parentElement;
       const originalPosition = wrapper.style.position;
       const positionChanged = root.getComputedStyle(wrapper).position === 'static';
@@ -453,7 +558,7 @@
   function refresh() {
     reset();
     // Defensive cleanup if a caller cloned a rendered subtree without resetting.
-    document.querySelectorAll('canvas[data-etherial-elastic]').forEach(item => { if (item !== canvas) item.remove(); });
+    document.querySelectorAll('[data-etherial-elastic]').forEach(item => { if (item !== canvas) item.remove(); });
   }
   function destroy() {
     if (destroyed) return;
@@ -462,8 +567,12 @@
     destroyed = true;
     cleanups.splice(0).forEach(cleanup => cleanup());
     if (observer) observer.disconnect();
+    if (svgRoot) svgRoot.remove();
+    svgRoot = null;
+    svgFilter = svgField = svgOffset = svgMatrix = svgDisplace = null;
     if (gl && !contextLost) gl.getExtension('WEBGL_lose_context')?.loseContext();
     canvas = null;
+    webglCanvas = null;
     gl = null;
   }
   function init() {
@@ -497,7 +606,7 @@
     status: () => ({
       enabled: enabled(), initialized, active: !!active, pending: !!pending,
       animating: !!frame, textureCount: textures.size, maxTextures: MAX_TEXTURES,
-      contextCreated: !!gl, contextLost, failed, destroyed
+      contextCreated: !!gl, contextLost, failed, destroyed, renderer: renderer || 'pending'
     })
   });
   if (document.readyState === 'loading') listen(document, 'DOMContentLoaded', init, { once: true });
