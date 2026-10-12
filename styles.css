@@ -85,3 +85,6 @@ button.official-story{width:100%;text-align:left;color:var(--ink)}.media-dialog 
 .motion-icon{display:inline-block;position:relative;width:12px;height:12px;flex:0 0 12px}.motion-icon:before{content:'';position:absolute;left:2px;top:1px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid currentColor}.motion-icon.is-playing:before,.motion-icon.is-playing:after{content:'';position:absolute;top:0;width:3px;height:12px;border:0;background:currentColor}.motion-icon.is-playing:before{left:1px}.motion-icon.is-playing:after{right:1px}
 /* Keep portrait tops aligned even when one artist's description wraps. */
 .artist-card{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}.artist-portrait{width:100%;flex:none}
+/* Occupation is editorial information; identity remains its own category. */
+.artist-meta>.artist-profession{font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ivory);margin:10px 0 5px}.artist-meta>.artist-discipline{margin-top:0}.profile-profession{font-size:17px;line-height:1.6;color:var(--ice);margin:0 0 22px}
+@media(max-width:760px){.artist-meta>.artist-profession{font-size:15px;margin:9px 0 6px}.profile-profession{font-size:16px}}

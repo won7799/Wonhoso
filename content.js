@@ -4,6 +4,7 @@ window.ETHERIAL_CONTENT = {
   artists: [
     {
       id: 'wonhoso', name: 'Wonhoso', image: 'assets/team-wonho.jpg', position: '50% 35%',
+      profession:{en:'K-pop Idol',ko:'케이팝 아이돌'},
       type: {en: 'Virtual Twin', ko: '버추얼 트윈'}, identity: 'Virtual Twin',
       discipline: {en: 'Music · Performance · Culture', ko: '음악 · 퍼포먼스 · 문화'},
       description: {en: 'Music, performance, culture and a growing global community. An artist identity that moves between physical and digital worlds.', ko: '음악과 퍼포먼스, 문화를 통해 글로벌 커뮤니티와 만납니다. 현실과 디지털 세계를 오가며 아티스트의 정체성을 확장합니다.'},
@@ -15,6 +16,7 @@ window.ETHERIAL_CONTENT = {
     },
     {
       id: 'zion', name: 'Zion', image: 'assets/team-zion.jpg', position: '50% 28%',
+      profession:{en:'Fashion Model',ko:'패션 모델'},
       type: {en: 'Virtual Twin', ko: '버추얼 트윈'}, identity: 'Virtual Twin',
       discipline: {en: 'Fashion · Movement · Visual culture', ko: '패션 · 움직임 · 비주얼 컬처'},
       description: {en:'Fashion, movement, visual culture and contemporary entertainment. A distinct presence, connected through the world of ÆTHER.',ko:'패션과 움직임, 비주얼 컬처와 동시대의 엔터테인먼트. 독자적인 존재감으로 ÆTHER의 세계와 연결됩니다.'},
@@ -23,6 +25,7 @@ window.ETHERIAL_CONTENT = {
     },
     {
       id: 'ivy', name: 'Ivy', image: 'assets/team-evie.jpg', position:'50% 30%',
+      profession:{en:'Beauty & Lifestyle Creator',ko:'뷰티·라이프스타일 크리에이터'},
       type:{en:'Virtual Twin',ko:'버추얼 트윈'},identity:'Virtual Twin',
       discipline:{en:'Beauty · Culture · Modern ambition',ko:'뷰티 · 문화 · 새로운 가능성'},
       description:{en:'Beauty, culture, business and a growing female-focused community. An independent identity within Etherial’s connected creative world.',ko:'뷰티와 문화, 비즈니스, 그리고 성장하는 여성 중심 커뮤니티. 에테리얼의 창작 세계 안에서 독립적인 정체성을 만들어갑니다.'},
@@ -30,6 +33,7 @@ window.ETHERIAL_CONTENT = {
     },
     {
       id:'aelric',name:'Aelric',image:'assets/team-aelric.jpg',position:'50% 26%',
+      profession:{en:'Indie Singer',ko:'인디 가수'},
       type:{en:'Digital Native Artist',ko:'디지털 네이티브 아티스트'},identity:'Digital Native Artist IP',
       discipline:{en:'Indie music · Digital storytelling',ko:'인디 음악 · 디지털 스토리텔링'},
       description:{en:'A fully digital indie singer with a distinct voice, identity and artistic world. Music and visual storytelling, shaped by human creative direction.',ko:'고유한 목소리와 정체성, 예술 세계를 지닌 디지털 인디 싱어. 사람의 창작 의도 아래 음악과 비주얼 스토리텔링을 펼칩니다.'},
