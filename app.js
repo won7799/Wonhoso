@@ -28,6 +28,7 @@
     nodes.forEach(node=>{const parts=node.nodeValue.split('↗');const fragment=document.createDocumentFragment();parts.forEach((part,index)=>{fragment.append(document.createTextNode(part));if(index<parts.length-1){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 16 16');svg.setAttribute('class','arrow-icon');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d','M3 13 13 3M3 3h10v10');svg.append(path);fragment.append(svg);}});node.replaceWith(fragment);});
   }
   function renderArtists() {
+    document.dispatchEvent(new Event('etherial:before-render'));
     track.replaceChildren();
     content.artists.forEach((artist,index) => {
       const card=el('button','artist-card');card.type='button';card.dataset.artist=artist.id;card.setAttribute('aria-label',`${language==='ko'?'프로필 보기:':'View profile:'} ${artist.name}`);
@@ -74,7 +75,7 @@
     $$('[data-en][data-ko]').forEach(node => {node.textContent=node.dataset[language].replace(/\\n/g,'\n');});
     $$('[data-language]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.language===language)));
     $('#artists-prev').setAttribute('aria-label',language==='ko'?'이전 아티스트':'Previous artists');$('#artists-next').setAttribute('aria-label',language==='ko'?'다음 아티스트':'Next artists');
-    renderArtists();renderHighlights();renderExcerpts();if(activeArtist && profileDialog.open) renderProfile(activeArtist);updateMotionLabel();normalizeArrows();updateGalleryLabel();
+    renderArtists();renderHighlights();renderExcerpts();if(activeArtist && profileDialog.open) renderProfile(activeArtist);updateMotionLabel();normalizeArrows();updateGalleryLabel();document.dispatchEvent(new Event('etherial:content-updated'));
   }
   $$('[data-language]').forEach(button=>button.addEventListener('click',()=>setLanguage(button.dataset.language)));
   function updateGallery(){const scrollable=track.scrollWidth>track.clientWidth+2;$('#artists-prev').disabled=!scrollable;$('#artists-next').disabled=!scrollable;}
@@ -202,7 +203,7 @@
     // Pointer activation on an identical decorative copy opens the same profile.
     track.scrollLeft=0;galleryPosition=0;
     const rect=track.getBoundingClientRect();galleryInView=rect.bottom>0&&rect.top<window.innerHeight;
-    normalizeArrows(track);measureGallery();
+    normalizeArrows(track);measureGallery();document.dispatchEvent(new Event('etherial:gallery-ready'));
   }
   function finishGalleryNavigation(){
     if(!galleryNavigating)return;
