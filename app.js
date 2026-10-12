@@ -257,7 +257,7 @@
   track.addEventListener('click',event=>{if(suppressGalleryClick){event.preventDefault();event.stopPropagation();}},{capture:true});
   track.addEventListener('dragstart',event=>event.preventDefault());
   track.addEventListener('wheel',event=>{if(Math.abs(event.deltaX)>2){pauseGalleryByUser();}},{passive:true});
-  track.addEventListener('scrollend',()=>{finishGalleryNavigation();if(!galleryCanMove())normalizeGalleryPosition();});
+  track.addEventListener('scrollend',()=>{if(galleryNavigating)return;if(!galleryCanMove())normalizeGalleryPosition();});
   window.addEventListener('resize',()=>{finishGalleryNavigation();measureGallery();},{passive:true});
   document.addEventListener('visibilitychange',reconcileGallery);
   window.addEventListener('blur',()=>{if(galleryDrag){galleryDrag=null;galleryPointer=false;track.classList.remove('is-dragging');pauseGalleryByUser();}});
