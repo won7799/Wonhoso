@@ -92,10 +92,10 @@
   let textureEdge = MAX_TEXTURE_EDGE;
   let observer = null;
 
-  const VERTEX = 'attribute vec2 aPosition; varying vec2 vUV; void main(){vUV=vec2((aPosition.x+1.0)*0.5,(1.0-aPosition.y)*0.5);gl_Position=vec4(aPosition,0.0,1.0);}';
+  const VERTEX = 'attribute vec2 aPosition; varying mediump vec2 vUV; void main(){vUV=vec2((aPosition.x+1.0)*0.5,(1.0-aPosition.y)*0.5);gl_Position=vec4(aPosition,0.0,1.0);}';
   const FRAGMENT = [
     'precision mediump float;',
-    'varying vec2 vUV;',
+    'varying mediump vec2 vUV;',
     'uniform sampler2D uImage;',
     'uniform vec2 uScale, uOffset, uPointer, uPull;',
     'uniform float uAspect, uTime;',
@@ -153,7 +153,9 @@
     program = null;
     uniforms = null;
   }
-  function fail() {
+  function fail(error) {
+    document.documentElement.dataset.elasticImages = 'unavailable';
+    if (error) root.console?.warn('[Etherial] Elastic images unavailable:', error.message);
     reset();
     disposeResources();
     failed = true;
@@ -179,8 +181,9 @@
     gl.deleteShader(vertex);
     gl.deleteShader(fragment);
     if (!gl.getProgramParameter(next, gl.LINK_STATUS)) {
+      const reason = gl.getProgramInfoLog(next) || 'link failed';
       gl.deleteProgram(next);
-      throw new Error('Elastic shader unavailable');
+      throw new Error('Elastic shader unavailable: ' + reason);
     }
     program = next;
     buffer = gl.createBuffer();
@@ -199,6 +202,7 @@
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     gl.clearColor(0, 0, 0, 0);
     textureEdge = Math.min(MAX_TEXTURE_EDGE, gl.getParameter(gl.MAX_TEXTURE_SIZE));
+    document.documentElement.dataset.elasticImages = 'ready';
   }
   function ensureRenderer() {
     if (program) return true;
@@ -219,7 +223,7 @@
         listen(canvas, 'webglcontextrestored', () => {
           if (destroyed) return;
           contextLost = false;
-          try { createProgram(); } catch (_) { fail(); }
+          try { createProgram(); } catch (error) { fail(error); }
         });
         gl = canvas.getContext('webgl', {
           alpha: true, antialias: false, depth: false, stencil: false,
@@ -229,7 +233,7 @@
       }
       createProgram();
       return true;
-    } catch (_) { fail(); return false; }
+    } catch (error) { fail(error); return false; }
   }
   function textureFor(image) {
     const key = image.currentSrc || image.src;
@@ -339,7 +343,7 @@
       if (!measure(state)) { reset(); return; }
       draw(state);
       canvas.style.visibility = 'visible';
-    } catch (_) { fail(); return; }
+    } catch (error) { fail(error); return; }
     if (isSettled(state.spring, state.hold.x, state.hold.y)) {
       lastFrame = 0;
       // Hold a little local tension under the cursor without an idle RAF loop.
@@ -389,9 +393,13 @@
       // Keep the native photo until actual movement gives the surface energy.
       canvas.style.visibility = 'hidden';
       if (observer) observer.observe(wrapper);
-    } catch (_) {
+    } catch (error) {
       // A failed or unsupported image keeps its original pixels and interaction.
-      if (generation === token) reset();
+      if (generation === token) {
+        document.documentElement.dataset.elasticImages = 'asset-fallback';
+        root.console?.warn('[Etherial] Elastic photo fallback:', error.message);
+        reset();
+      }
     } finally { if (generation === token) pending = null; }
   }
   function release() {
@@ -461,6 +469,7 @@
   function init() {
     if (initialized || destroyed) return;
     initialized = true;
+    document.documentElement.dataset.elasticImages = enabled() ? 'standby' : 'static';
     if ('IntersectionObserver' in root) {
       observer = new root.IntersectionObserver(entries => {
         if (active && entries.some(entry => entry.target === active.wrapper && !entry.isIntersecting)) reset();
