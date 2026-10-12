@@ -22,6 +22,11 @@
   const text = (node, value) => { node.textContent = tr(value); return node; };
   const el = (tag, classes, value) => { const node = document.createElement(tag); if (classes) node.className = classes; if (value != null) text(node, value); return node; };
   const externalLink = (label, url, classes) => { const link = el('a', classes, label); link.href=url;link.target='_blank';link.rel='noopener noreferrer';return link; };
+  function normalizeArrows(scope=document.body){
+    const walker=document.createTreeWalker(scope,NodeFilter.SHOW_TEXT,{acceptNode:node=>node.nodeValue.includes('↗')&&!node.parentElement.closest('script,style,svg')?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT});
+    const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+    nodes.forEach(node=>{const parts=node.nodeValue.split('↗');const fragment=document.createDocumentFragment();parts.forEach((part,index)=>{fragment.append(document.createTextNode(part));if(index<parts.length-1){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 16 16');svg.setAttribute('class','arrow-icon');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d','M3 13 13 3M3 3h10v10');svg.append(path);fragment.append(svg);}});node.replaceWith(fragment);});
+  }
   function renderArtists() {
     track.replaceChildren();
     content.artists.forEach((artist,index) => {
@@ -29,7 +34,7 @@
       const portrait=el('div','artist-portrait');const image=el('img');image.src=artist.image;image.alt=artist.name;image.loading='lazy';image.width=900;image.height=1125;image.style.objectPosition=artist.position;portrait.append(image,el('span','artist-index',`0${index+1} / ETHERIAL`),el('span','artist-profile-arrow','↗'));portrait.lastChild.setAttribute('aria-hidden','true');
       const meta=el('div','artist-meta');meta.append(el('span','artist-type',artist.profession?tr(artist.type)+' · '+tr(artist.profession):artist.type),el('h3','',artist.name),el('p','',artist.discipline));card.append(portrait,meta);track.append(card);
     });
-    requestAnimationFrame(updateGallery);
+    requestAnimationFrame(()=>{updateGallery();refreshPortraitMotion();});
   }
   function workAction(item,label,classes) {
     const node=item.media?el('button',classes,label):externalLink(label,item.url,classes);
@@ -69,7 +74,7 @@
     $$('[data-en][data-ko]').forEach(node => {node.textContent=node.dataset[language].replace(/\\n/g,'\n');});
     $$('[data-language]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.language===language)));
     $('#artists-prev').setAttribute('aria-label',language==='ko'?'이전 아티스트':'Previous artists');$('#artists-next').setAttribute('aria-label',language==='ko'?'다음 아티스트':'Next artists');
-    renderArtists();renderHighlights();renderExcerpts();if(activeArtist && profileDialog.open) renderProfile(activeArtist);updateMotionLabel();
+    renderArtists();renderHighlights();renderExcerpts();if(activeArtist && profileDialog.open) renderProfile(activeArtist);updateMotionLabel();normalizeArrows();
   }
   $$('[data-language]').forEach(button=>button.addEventListener('click',()=>setLanguage(button.dataset.language)));
   function updateGallery(){const max=track.scrollWidth-track.clientWidth;$('#artists-prev').disabled=track.scrollLeft<4;$('#artists-next').disabled=track.scrollLeft>max-4;}
@@ -95,6 +100,7 @@
     const links=el('div','profile-links');artist.links.forEach(([label,url])=>links.append(externalLink(label+' ↗',url)));body.append(links);
     if(artist.works.length){const works=el('div','profile-works');works.append(el('p','micro',{en:'Music & moving images',ko:'음악 & 영상'}));artist.works.forEach(work=>{if(work.media){const button=el('button','',tr(work.label)+' ↗');button.type='button';button.addEventListener('click',()=>{closeDialog(profileDialog);openMedia(work.media);});works.append(button);}else if(work.youtube){const button=el('button','',tr(work.label)+' ↗');button.type='button';button.addEventListener('click',()=>{closeDialog(profileDialog);openMedia({title:tr(work.label),subtitle:artist.name,youtube:work.youtube,url:work.url,portrait:work.portrait});});works.append(button);}else{works.append(externalLink(tr(work.label)+' ↗',work.url));}});body.append(works);}
     layout.append(img,body);const container=$('#artist-dialog-content');container.replaceChildren(layout);if(artist.editorial?.length){const gallery=el('section','profile-editorial');gallery.setAttribute('aria-label',language==='ko'?'추가 포트레이트':'Additional portraits');artist.editorial.forEach(item=>{const figure=el('figure');const image=el('img');image.src=item.image;image.alt=artist.name+' — '+tr(item.caption);image.loading='lazy';figure.append(image,el('figcaption','micro',item.caption));gallery.append(figure);});container.append(gallery);}
+    normalizeArrows(container);
   }
   function openProfile(id){const artist=content.artists.find(item=>item.id===id);if(!artist)return;activeArtist=artist;renderProfile(artist);openDialog(profileDialog);}
   function openMedia(item){
@@ -111,7 +117,7 @@
       video.addEventListener('error',()=>{const error=el('p','video-error',language==='ko'?'영상을 불러오지 못했습니다. 아래 링크로 열어주세요.':'The video could not be loaded. Please open the video file below.');container.append(error);},{once:true});container.append(video);
       $('#media-note').append(document.createTextNode(language==='ko'?'재생 버튼으로 시작하세요. ':'Press play to begin. '),externalLink(language==='ko'?'영상 파일 열기 ↗':'Open video file ↗',media.file));
     }
-    openDialog(mediaDialog);hero.pause();
+    normalizeArrows(mediaDialog);openDialog(mediaDialog);hero.pause();
   }
   document.addEventListener('click',event=>{const artistTrigger=event.target.closest('[data-artist]');if(artistTrigger){openProfile(artistTrigger.dataset.artist);return;}const mediaTrigger=event.target.closest('[data-media]');if(mediaTrigger)openMedia(mediaTrigger.dataset.media);});
   document.addEventListener('keydown',event=>{
@@ -119,11 +125,112 @@
   });
   function updateMotionLabel(){const label=$('.motion-label',motionButton);const isPlaying=!hero.paused;text(label,isPlaying?{en:'Pause motion',ko:'영상 일시정지'}:{en:'Play motion',ko:'영상 재생'});$('.motion-icon',motionButton).textContent=isPlaying?'Ⅱ':'▷';motionButton.setAttribute('aria-label',tr(isPlaying?{en:'Pause background motion',ko:'배경 영상 일시정지'}:{en:'Play background motion',ko:'배경 영상 재생'}));motionButton.setAttribute('aria-pressed',String(isPlaying));}
   async function playHero(userInitiated=false){if(!content.heroVideo)return;if(userInitiated){lastHeroPermission=true;hero.classList.add('user-play');}if(!heroRequested){hero.src=content.heroVideo;heroRequested=true;hero.load();}try{await hero.play();}catch{updateMotionLabel();}}
-  if(content.heroVideo){motionButton.hidden=false;hero.poster='assets/hero-studio.webp';hero.addEventListener('loadeddata',()=>hero.classList.add('is-ready'));hero.addEventListener('play',updateMotionLabel);hero.addEventListener('pause',updateMotionLabel);hero.addEventListener('error',()=>{hero.classList.remove('is-ready');motionButton.hidden=true;});if(!reducedMotion.matches&&!mobileMedia.matches&&!navigator.connection?.saveData){lastHeroPermission=true;playHero();}}
+  if(content.heroVideo){motionButton.hidden=false;hero.poster='assets/hero-studio.webp';hero.addEventListener('loadeddata',()=>hero.classList.add('is-ready'));hero.addEventListener('play',updateMotionLabel);hero.addEventListener('pause',updateMotionLabel);hero.addEventListener('error',()=>{hero.classList.remove('is-ready');motionButton.hidden=true;});if(!reducedMotion.matches&&!navigator.connection?.saveData){lastHeroPermission=true;playHero();}}
   motionButton.addEventListener('click',()=>{if(hero.paused)playHero(true);else{lastHeroPermission=false;hero.pause();}});
   if('IntersectionObserver' in window){new IntersectionObserver(entries=>{heroInView=entries[0].isIntersecting;if(!heroInView)hero.pause();else if(lastHeroPermission&&!document.hidden&&!mediaDialog.open)playHero();},{threshold:.05}).observe($('.hero'));}
   document.addEventListener('visibilitychange',()=>{if(document.hidden)hero.pause();else if(lastHeroPermission&&heroInView&&!mediaDialog.open)playHero();});
   mediaDialog.addEventListener('close',()=>{if(lastHeroPermission&&heroInView&&!document.hidden)playHero();});
   reducedMotion.addEventListener('change',event=>{if(event.matches){lastHeroPermission=false;hero.pause();hero.classList.remove('user-play');}});
+
+  // A single scroll timeline, not independent card reveals. All poses resolve to
+  // their original layout, so there is no image morphing or permanent reordering.
+  function portraitPose(progress,index,count,width,viewport) {
+    const clamp=n=>Math.max(0,Math.min(1,n));
+    const ease=(a,b)=>{const t=clamp((progress-a)/(b-a));return t*t*(3-2*t);};
+    const offset=index-(count-1)/2;
+    const rank=Math.abs(offset);
+    const arrival=ease(.02+rank*.035,.45+rank*.035);
+    const spread=ease(.42,.89);
+    const finish=1-spread;
+    const step=width+20;
+    return {
+      x:-offset*step*.69*finish + offset*16*(1-arrival),
+      y:(-70-rank*20)*(1-arrival) + Math.abs(offset)*9*finish,
+      z:(-360-rank*65)*(1-arrival) + (2-rank)*30*finish,
+      rx:18*(1-arrival)+7*finish,
+      ry:(-18+offset*7)*finish,
+      rz:offset*5.5*finish,
+      scale:1-.33*finish,
+      labels:ease(.76,.93),
+      cameraX:13*finish,
+      cameraY:-13*finish,
+      cameraZ:-3.5*finish,
+      cameraScale:1-.09*finish,
+      shadow:.38*finish
+    };
+  }
+  const portraitMedia=matchMedia('(min-width:901px) and (min-height:601px)');
+  const sequence=$('#artist-sequence');
+  const skipPortraits=$('#skip-artist-motion');
+  let portraitFrame=0;
+  let portraitStart=0;
+  let portraitRange=1;
+  let portraitWidth=0;
+  let portraitEnabled=false;
+  let portraitForcedFinal=false;
+  let portraitSkipped=false;
+  let mobilePortraitEnabled=false;
+  function resetPortraits(){
+    track.style.removeProperty('--portrait-camera');
+    $$('.artist-card',track).forEach(card=>{
+      ['--portrait-transform','--portrait-labels','--portrait-shadow'].forEach(name=>card.style.removeProperty(name));
+    });
+    sequence.classList.remove('is-active');
+  }
+  function drawPortraitMotion(){
+    portraitFrame=0;
+    if(mobilePortraitEnabled){drawMobilePortraits();return;}
+    if(!portraitEnabled||portraitSkipped)return;
+    const progress=portraitForcedFinal?1:Math.max(0,Math.min(1,(window.scrollY-portraitStart)/portraitRange));
+    const cards=$$('.artist-card',track);
+    sequence.classList.toggle('is-active',progress>0&&progress<1);
+    cards.forEach((card,index)=>{
+      const pose=portraitPose(progress,index,cards.length,portraitWidth,window.innerWidth);
+      card.style.setProperty('--portrait-transform',`translate3d(${pose.x.toFixed(2)}px,${pose.y.toFixed(2)}px,${pose.z.toFixed(2)}px) rotateX(${pose.rx.toFixed(2)}deg) rotateY(${pose.ry.toFixed(2)}deg) rotateZ(${pose.rz.toFixed(2)}deg) scale(${pose.scale.toFixed(4)})`);
+      card.style.setProperty('--portrait-labels',pose.labels.toFixed(4));
+      card.style.setProperty('--portrait-shadow',pose.shadow.toFixed(3));
+      if(index===0)track.style.setProperty('--portrait-camera',`rotateX(${pose.cameraX.toFixed(2)}deg) rotateY(${pose.cameraY.toFixed(2)}deg) rotateZ(${pose.cameraZ.toFixed(2)}deg) scale(${pose.cameraScale.toFixed(4)})`);
+    });
+  }
+  function drawMobilePortraits(){
+    if(!mobilePortraitEnabled)return;
+    const width=window.innerWidth;
+    const entry=Math.max(0,Math.min(1,(window.innerHeight-sequence.getBoundingClientRect().top)/(window.innerHeight*.65)));
+    $$('.artist-card',track).forEach(card=>{
+      const rect=card.getBoundingClientRect();
+      const offset=Math.max(-1,Math.min(1,((rect.left+rect.width/2)-width/2)/width));
+      const angle=portraitForcedFinal?0:-offset*16;
+      const scale=portraitForcedFinal?1:1-Math.abs(offset)*.055-(1-entry)*.055;
+      card.style.setProperty('--portrait-transform',`perspective(900px) rotateY(${angle.toFixed(2)}deg) rotateX(${((1-entry)*9).toFixed(2)}deg) scale(${scale.toFixed(4)})`);
+    });
+  }
+  function queuePortraitMotion(){if((portraitEnabled||mobilePortraitEnabled)&&!portraitSkipped&&!portraitFrame)portraitFrame=requestAnimationFrame(drawPortraitMotion);} 
+  function refreshPortraitMotion(){
+    portraitEnabled=portraitMedia.matches&&!reducedMotion.matches;
+    mobilePortraitEnabled=!portraitMedia.matches&&!reducedMotion.matches;
+    document.documentElement.classList.toggle('has-mobile-portrait-motion',mobilePortraitEnabled);
+    document.documentElement.classList.toggle('has-portrait-motion',portraitEnabled);
+    $('.artist-motion-footer').hidden=!portraitEnabled;
+    if(!portraitEnabled||portraitSkipped){resetPortraits();if(mobilePortraitEnabled)queuePortraitMotion();return;}
+    portraitStart=sequence.getBoundingClientRect().top+window.scrollY;
+    portraitRange=Math.max(1,sequence.offsetHeight-$('.artist-sticky',sequence).offsetHeight);
+    portraitWidth=$('.artist-card',track)?.offsetWidth||200;
+    queuePortraitMotion();
+  }
+  window.addEventListener('scroll',queuePortraitMotion,{passive:true});
+  track.addEventListener('scroll',queuePortraitMotion,{passive:true});
+  window.addEventListener('resize',refreshPortraitMotion,{passive:true});
+  portraitMedia.addEventListener('change',refreshPortraitMotion);
+  reducedMotion.addEventListener('change',refreshPortraitMotion);
+  // Keyboard access reveals the complete roster immediately, without trapping
+  // focus or requiring the visitor to scrub through the visual sequence.
+  track.addEventListener('focusin',()=>{portraitForcedFinal=true;queuePortraitMotion();});
+  skipPortraits.addEventListener('click',()=>{
+    portraitSkipped=true;portraitForcedFinal=true;sequence.classList.add('is-skipped');resetPortraits();
+    $('#artists-title').scrollIntoView({behavior:'instant',block:'start'});
+    $('.artist-card',track)?.focus({preventScroll:true});
+  });
   setLanguage('en');
+  refreshPortraitMotion();
+
 })();
