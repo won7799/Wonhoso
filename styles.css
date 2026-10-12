@@ -81,3 +81,7 @@ button.official-story{width:100%;text-align:left;color:var(--ink)}.media-dialog 
 /* Phone framing follows the whale and waterfall; type remains independent. */
 @media(max-width:760px){.hero-poster img,.hero-video{object-fit:cover;object-position:83% center}.hero-controls{flex-shrink:0}.hero-caption{flex:1;min-width:0}.scroll-cue{gap:8px;font-size:8px}.motion-toggle{min-width:104px;justify-content:center}}
 @media(prefers-reduced-motion:no-preference){.has-mobile-portrait-motion .artist-portrait{transform:var(--portrait-transform,none)!important;transform-origin:50% 50%;backface-visibility:hidden}.has-mobile-portrait-motion .artist-card{perspective:900px}}
+/* Native play/pause geometry avoids missing symbol glyphs in either language. */
+.motion-icon{display:inline-block;position:relative;width:12px;height:12px;flex:0 0 12px}.motion-icon:before{content:'';position:absolute;left:2px;top:1px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid currentColor}.motion-icon.is-playing:before,.motion-icon.is-playing:after{content:'';position:absolute;top:0;width:3px;height:12px;border:0;background:currentColor}.motion-icon.is-playing:before{left:1px}.motion-icon.is-playing:after{right:1px}
+/* Keep portrait tops aligned even when one artist's description wraps. */
+.artist-card{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}.artist-portrait{width:100%;flex:none}
