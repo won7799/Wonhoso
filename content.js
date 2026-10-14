@@ -3,11 +3,11 @@ window.ETHERIAL_CONTENT = {
   heroVideo: 'assets/hero-living-worlds.mp4',
   artists: [
     {
-      id: 'wonhoso', name: 'Wonhoso', image: 'assets/team-wonho.jpg', position: '50% 35%',
+      id: 'wonhoso', name: 'Wonhoso', profileUrl: '/artists/wonhoso/', image: 'assets/team-wonho.jpg', position: '50% 35%',
       profession:{en:'K-pop Idol',ko:'케이팝 아이돌'},
       type: {en: 'Virtual Twin', ko: '버추얼 트윈'}, identity: 'Virtual Twin',
       discipline: {en: 'Music · Performance · Culture', ko: '음악 · 퍼포먼스 · 문화'},
-      description: {en: 'Music, performance, culture and a growing global community. An artist identity that moves between physical and digital worlds.', ko: '음악과 퍼포먼스, 문화를 통해 글로벌 커뮤니티와 만납니다. 현실과 디지털 세계를 오가며 아티스트의 정체성을 확장합니다.'},
+      description: {en: 'Wonhoso is a Virtual Twin: the digital counterpart of the same real person behind the artist. His work combines human performance with AI-assisted production, across music, performance and culture. He is not a fully generated fictional person.', ko: 'Wonhoso는 아티스트 본인과 동일한 실제 인물의 정체성을 지닌 버추얼 트윈입니다. 음악, 퍼포먼스, 문화 활동에서 사람의 퍼포먼스와 AI 보조 제작을 결합합니다. 완전히 생성된 가상의 인물이 아닙니다.'},
       links: [['Instagram', 'https://www.instagram.com/wonhoso_7/'], ['YouTube', 'https://www.youtube.com/@Wonhoso'], ['TikTok', 'https://www.tiktok.com/@iwonho'], ['Facebook', 'https://www.facebook.com/officialwonhoso.'], ['Threads', 'https://www.threads.com/@iwonhoso']],
       works: [
         {label:{en:'TOGETHER — Official music video',ko:'TOGETHER — 공식 뮤직비디오'}, url:'https://youtu.be/JVXK0gZqaa4',youtube:'JVXK0gZqaa4'},
