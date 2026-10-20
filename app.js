@@ -70,12 +70,21 @@
       const body=el('div','excerpt-copy');body.append(el('p','micro',item.title),el('h4','',artist.name),el('p','excerpt-description',item.description));const play=workAction({media:item.media},{en:'Play excerpt ↗',ko:'클립 재생 ↗'},'excerpt-link');body.append(play);const profile=el('button','excerpt-profile',{en:'Artist profile ↗',ko:'아티스트 프로필 ↗'});profile.type='button';profile.dataset.artist=artist.id;body.append(profile);card.append(cover,body);grid.append(card);
     });
   }
+  function field(node, enKey, koKey) {
+    const value = language === 'ko' ? node.dataset[koKey] : node.dataset[enKey];
+    return value == null ? null : value.replace(/\\n/g, '\n');
+  }
+  function menuAria(open) { return open ? (language === 'ko' ? '메뉴 닫기' : 'Close menu') : (language === 'ko' ? '메뉴 열기' : 'Open menu'); }
   function setLanguage(lang) {
     language=lang==='ko'?'ko':'en';document.documentElement.lang=language;
     $$('[data-en][data-ko]').forEach(node => {node.textContent=node.dataset[language].replace(/\\n/g,'\n');});
+    $$('[data-placeholder-en][data-placeholder-ko]').forEach(node => { const value = field(node, 'placeholderEn', 'placeholderKo'); if (value != null) node.setAttribute('placeholder', value); });
+    $$('[data-alt-en][data-alt-ko]').forEach(node => { const value = field(node, 'altEn', 'altKo'); if (value != null) node.alt = value; });
+    $$('[data-aria-en][data-aria-ko]').forEach(node => { if (node.classList.contains('menu-toggle')) return; const value = field(node, 'ariaEn', 'ariaKo'); if (value != null) node.setAttribute('aria-label', value); });
     $$('[data-language]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.language===language)));
     $('#artists-prev')?.setAttribute('aria-label',language==='ko'?'이전 아티스트':'Previous artists');
     $('#artists-next')?.setAttribute('aria-label',language==='ko'?'다음 아티스트':'Next artists');
+    if (menuButton) menuButton.setAttribute('aria-label', menuAria(menuButton.getAttribute('aria-expanded') === 'true'));
     if(track)renderArtists();
     renderHighlights();renderExcerpts();if(activeArtist && profileDialog?.open) renderProfile(activeArtist);updateMotionLabel();normalizeArrows();updateGalleryLabel();document.dispatchEvent(new Event('etherial:content-updated'));
   }
@@ -84,7 +93,7 @@
   function moveGallery(direction){navigateGallery(direction);}
   $('#artists-prev')?.addEventListener('click',()=>moveGallery(-1));$('#artists-next')?.addEventListener('click',()=>moveGallery(1));
   const menu=$('#mobile-nav');const menuButton=$('.menu-toggle');
-  function setMenu(open){if(!menu||!menuButton)return;if(open){menuLastFocus=document.activeElement;}menuButton.setAttribute('aria-expanded',String(open));menuButton.setAttribute('aria-label',open?'Close menu':'Open menu');menu.hidden=!open;menu.inert=!open;document.body.classList.toggle('menu-open',open);if(open){$('a',menu)?.focus();}else if(menuLastFocus){menuLastFocus.focus({preventScroll:true});}}
+  function setMenu(open){if(!menu||!menuButton)return;if(open){menuLastFocus=document.activeElement;}menuButton.setAttribute('aria-expanded',String(open));menuButton.setAttribute('aria-label',menuAria(open));menu.hidden=!open;menu.inert=!open;document.body.classList.toggle('menu-open',open);if(open){$('a',menu)?.focus();}else if(menuLastFocus){menuLastFocus.focus({preventScroll:true});}}
   menuButton?.addEventListener('click',()=>setMenu(menuButton.getAttribute('aria-expanded')!=='true'));
   if(menu)$$('a',menu).forEach(link=>link.addEventListener('click',()=>setMenu(false)));
   matchMedia('(min-width:901px)').addEventListener('change',event=>{if(event.matches && !menu.hidden)setMenu(false);});
@@ -99,7 +108,7 @@
   });
   function renderProfile(artist){
     const layout=el('div','profile-layout');const img=el('img','profile-image');img.src=artist.image;img.alt=artist.name;img.style.objectPosition=artist.position;img.width=900;img.height=1125;
-    const body=el('div','profile-content');body.append(el('p','eyebrow',artist.type));const heading=el('h2','',artist.name);heading.id='profile-name';body.append(heading);if(artist.profession)body.append(el('p','profile-profession',artist.profession));if(artist.identity && artist.identity!==artist.type.en)body.append(el('span','profile-identity',artist.identity));body.append(el('p','profile-description',artist.description));
+    const body=el('div','profile-content');body.append(el('p','eyebrow',artist.type));const heading=el('h2','',artist.name);heading.id='profile-name';body.append(heading);if(artist.profession)body.append(el('p','profile-profession',artist.profession));if(artist.identity && !(typeof artist.identity==='string' && artist.identity===artist.type.en) && tr(artist.identity)!==tr(artist.type))body.append(el('span','profile-identity',artist.identity));body.append(el('p','profile-description',artist.description));
     const links=el('div','profile-links');if(artist.profileUrl){const official=el('a','',{en:'Official profile ↗',ko:'공식 프로필 ↗'});official.href=artist.profileUrl;links.append(official);}artist.links.forEach(([label,url])=>links.append(externalLink(label+' ↗',url)));body.append(links);
     if(artist.works.length){const works=el('div','profile-works');works.append(el('p','micro',{en:'Music & moving images',ko:'음악 & 영상'}));artist.works.forEach(work=>{if(work.media){const button=el('button','',tr(work.label)+' ↗');button.type='button';button.addEventListener('click',()=>{closeDialog(profileDialog);openMedia(work.media);});works.append(button);}else if(work.youtube){const button=el('button','',tr(work.label)+' ↗');button.type='button';button.addEventListener('click',()=>{closeDialog(profileDialog);openMedia({title:tr(work.label),subtitle:artist.name,youtube:work.youtube,url:work.url,portrait:work.portrait});});works.append(button);}else{works.append(externalLink(tr(work.label)+' ↗',work.url));}});body.append(works);}
     layout.append(img,body);const container=$('#artist-dialog-content');container.replaceChildren(layout);if(artist.editorial?.length){const gallery=el('section','profile-editorial');gallery.setAttribute('aria-label',language==='ko'?'추가 포트레이트':'Additional portraits');artist.editorial.forEach(item=>{const figure=el('figure');const image=el('img');image.src=item.image;image.alt=artist.name+' — '+tr(item.caption);image.loading='lazy';figure.append(image,el('figcaption','micro',item.caption));gallery.append(figure);});container.append(gallery);}

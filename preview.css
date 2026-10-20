@@ -97,7 +97,7 @@
 .duo p:not(.eyebrow):not(.micro){color:var(--silver);font-size:14px}
 .logos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:22px 0}
 .logos span{border:1px dashed var(--line);padding:18px 10px;text-align:center;font:10px var(--mono);letter-spacing:.1em;color:#8794a7}
-.logos span.real{border-style:solid;color:#fff;font-family:Space Grotesk;font-size:13px;letter-spacing:.02em}
+.logos span.real,.logos a.real{border:1px solid var(--line);color:#fff;font-family:Space Grotesk,Inter,sans-serif;font-size:13px;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;min-height:64px;padding:18px 10px;text-align:center}
 /* FAQ */
 .faq{border-top:1px solid var(--line)}
 .faq details{border-bottom:1px solid var(--line)}
@@ -199,3 +199,17 @@ a.card:hover{border-color:rgba(150,185,222,.7);background:#0e1a2e}
 .pkg dl.spec{display:grid;grid-template-columns:96px 1fr;gap:9px 14px;margin:6px 0 0;font-size:12.5px;line-height:1.5}
 .pkg dl.spec dt{font:9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#6f8199;padding-top:2px}
 .pkg dl.spec dd{margin:0;color:#dfe6ef}
+h1[data-en],h2[data-en],h3[data-en],p[data-en],.hero-sub,.mosaic .yours small{white-space:pre-line}
+.numbers-cta{margin-top:22px;font-size:15px;max-width:640px}
+.numbers-cta a{color:var(--ice);border-bottom:1px solid rgba(150,185,222,.55);padding-bottom:2px}
+.press-strip{padding:48px 0 56px;border-top:1px solid var(--line)}
+.press-strip .eyebrow{margin-bottom:18px}
+.press-logos{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.press-logo{display:inline-flex;align-items:center;justify-content:center;min-height:76px;min-width:220px;padding:18px 28px;border:1px solid var(--line);background:#09101b;color:#fff}
+.press-logo:hover{border-color:#fff}
+.press-wordmark{font-family:Space Grotesk,Inter,sans-serif;font-size:16px;letter-spacing:.04em;font-weight:500}
+.privacy-body{max-width:760px}
+.privacy-body h2{font-size:clamp(22px,2vw,28px);margin:34px 0 10px;letter-spacing:-.03em}
+.privacy-body p,.privacy-body li{color:var(--silver);font-size:15px;line-height:1.75}
+.privacy-body ul{margin:8px 0 0;padding-left:18px}
+.privacy-body a{border-bottom:1px solid rgba(255,255,255,.35)}
