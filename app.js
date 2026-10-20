@@ -28,6 +28,7 @@
     nodes.forEach(node=>{const parts=node.nodeValue.split('↗');const fragment=document.createDocumentFragment();parts.forEach((part,index)=>{fragment.append(document.createTextNode(part));if(index<parts.length-1){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 16 16');svg.setAttribute('class','arrow-icon');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d','M3 13 13 3M3 3h10v10');svg.append(path);fragment.append(svg);}});node.replaceWith(fragment);});
   }
   function renderArtists() {
+    if(!track)return;
     document.dispatchEvent(new Event('etherial:before-render'));
     track.replaceChildren();
     content.artists.forEach((artist,index) => {
@@ -74,13 +75,15 @@
     language=lang==='ko'?'ko':'en';document.documentElement.lang=language;
     $$('[data-en][data-ko]').forEach(node => {node.textContent=node.dataset[language].replace(/\\n/g,'\n');});
     $$('[data-language]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.language===language)));
-    $('#artists-prev').setAttribute('aria-label',language==='ko'?'이전 아티스트':'Previous artists');$('#artists-next').setAttribute('aria-label',language==='ko'?'다음 아티스트':'Next artists');
-    renderArtists();renderHighlights();renderExcerpts();if(activeArtist && profileDialog.open) renderProfile(activeArtist);updateMotionLabel();normalizeArrows();updateGalleryLabel();document.dispatchEvent(new Event('etherial:content-updated'));
+    const prev=$('#artists-prev');const next=$('#artists-next');
+    if(prev)prev.setAttribute('aria-label',language==='ko'?'이전 아티스트':'Previous artists');
+    if(next)next.setAttribute('aria-label',language==='ko'?'다음 아티스트':'Next artists');
+    if(track)renderArtists();renderHighlights();renderExcerpts();if(activeArtist && profileDialog?.open) renderProfile(activeArtist);updateMotionLabel();normalizeArrows();updateGalleryLabel();document.dispatchEvent(new Event('etherial:content-updated'));
   }
   $$('[data-language]').forEach(button=>button.addEventListener('click',()=>setLanguage(button.dataset.language)));
-  function updateGallery(){const scrollable=track.scrollWidth>track.clientWidth+2;$('#artists-prev').disabled=!scrollable;$('#artists-next').disabled=!scrollable;}
+  function updateGallery(){if(!track)return;const scrollable=track.scrollWidth>track.clientWidth+2;const prev=$('#artists-prev');const next=$('#artists-next');if(prev)prev.disabled=!scrollable;if(next)next.disabled=!scrollable;}
   function moveGallery(direction){navigateGallery(direction);}
-  $('#artists-prev').addEventListener('click',()=>moveGallery(-1));$('#artists-next').addEventListener('click',()=>moveGallery(1));
+  $('#artists-prev')?.addEventListener('click',()=>moveGallery(-1));$('#artists-next')?.addEventListener('click',()=>moveGallery(1));
   const menu=$('#mobile-nav');const menuButton=$('.menu-toggle');
   function setMenu(open){if(open){menuLastFocus=document.activeElement;}menuButton.setAttribute('aria-expanded',String(open));menuButton.setAttribute('aria-label',open?'Close menu':'Open menu');menu.hidden=!open;menu.inert=!open;document.body.classList.toggle('menu-open',open);if(open){$('a',menu).focus();}else if(menuLastFocus){menuLastFocus.focus({preventScroll:true});}}
   menuButton.addEventListener('click',()=>setMenu(menuButton.getAttribute('aria-expanded')!=='true'));
@@ -89,7 +92,7 @@
   function openDialog(dialog){lastFocus=document.activeElement;dialog.showModal();document.body.classList.add('dialog-open');$('.dialog-close',dialog).focus();}
   function closeDialog(dialog){if(dialog.open)dialog.close();}
   function cleanupMedia(){const video=$('video',$('#media-container'));if(video)video.pause();$('#media-container').replaceChildren();}
-  [profileDialog,mediaDialog].forEach(dialog=>{
+  if(profileDialog&&mediaDialog)[profileDialog,mediaDialog].forEach(dialog=>{
     $('.dialog-close',dialog).addEventListener('click',()=>closeDialog(dialog));
     dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)closeDialog(dialog);}});
     dialog.addEventListener('close',()=>{if(dialog===mediaDialog)cleanupMedia();if(!profileDialog.open&&!mediaDialog.open)document.body.classList.remove('dialog-open');if(lastFocus?.isConnected)lastFocus.focus({preventScroll:true});});
@@ -102,8 +105,9 @@
     layout.append(img,body);const container=$('#artist-dialog-content');container.replaceChildren(layout);if(artist.editorial?.length){const gallery=el('section','profile-editorial');gallery.setAttribute('aria-label',language==='ko'?'추가 포트레이트':'Additional portraits');artist.editorial.forEach(item=>{const figure=el('figure');const image=el('img');image.src=item.image;image.alt=artist.name+' — '+tr(item.caption);image.loading='lazy';figure.append(image,el('figcaption','micro',item.caption));gallery.append(figure);});container.append(gallery);}
     normalizeArrows(container);
   }
-  function openProfile(id){const artist=content.artists.find(item=>item.id===id);if(!artist)return;activeArtist=artist;pauseGalleryByUser();renderProfile(artist);openDialog(profileDialog);}
+  function openProfile(id){if(!profileDialog)return;const artist=content.artists.find(item=>item.id===id);if(!artist)return;activeArtist=artist;pauseGalleryByUser();renderProfile(artist);openDialog(profileDialog);}
   function openMedia(item){
+    if(!mediaDialog)return;
     const media=typeof item==='string'?content.media[item]:item;if(!media)return;
     text($('#media-title'),media.title);text($('#media-subtitle'),media.subtitle);const container=$('#media-container');container.replaceChildren();$('#media-note').replaceChildren();
     if(media.youtube){
@@ -117,20 +121,23 @@
       video.addEventListener('error',()=>{const error=el('p','video-error',language==='ko'?'영상을 불러오지 못했습니다. 아래 링크로 열어주세요.':'The video could not be loaded. Please open the video file below.');container.append(error);},{once:true});container.append(video);
       $('#media-note').append(document.createTextNode(language==='ko'?'재생 버튼으로 시작하세요. ':'Press play to begin. '),externalLink(language==='ko'?'영상 파일 열기 ↗':'Open video file ↗',media.file));
     }
-    normalizeArrows(mediaDialog);openDialog(mediaDialog);hero.pause();
+    normalizeArrows(mediaDialog);openDialog(mediaDialog);if(hero)hero.pause();
   }
   document.addEventListener('click',event=>{const artistTrigger=event.target.closest('[data-artist]');if(artistTrigger){openProfile(artistTrigger.dataset.artist);return;}const mediaTrigger=event.target.closest('[data-media]');if(mediaTrigger)openMedia(mediaTrigger.dataset.media);});
   document.addEventListener('keydown',event=>{
     if(!menu.hidden){if(event.key==='Escape'){event.preventDefault();setMenu(false);}if(event.key==='Tab'){const focusable=[menuButton,...$$('a',menu)];const index=focusable.indexOf(document.activeElement);if(event.shiftKey&&index<=0){event.preventDefault();focusable.at(-1).focus();}else if(!event.shiftKey&&index===focusable.length-1){event.preventDefault();menuButton.focus();}}}
   });
-  function updateMotionLabel(){const label=$('.motion-label',motionButton);const isPlaying=!hero.paused;text(label,isPlaying?{en:'Pause motion',ko:'영상 일시정지'}:{en:'Play motion',ko:'영상 재생'});$('.motion-icon',motionButton).textContent='';$('.motion-icon',motionButton).classList.toggle('is-playing',isPlaying);motionButton.setAttribute('aria-label',tr(isPlaying?{en:'Pause background motion',ko:'배경 영상 일시정지'}:{en:'Play background motion',ko:'배경 영상 재생'}));motionButton.setAttribute('aria-pressed',String(isPlaying));}
-  async function playHero(userInitiated=false){if(!content.heroVideo)return;if(userInitiated){lastHeroPermission=true;hero.classList.add('user-play');}if(!heroRequested){hero.src=content.heroVideo;heroRequested=true;hero.load();}try{await hero.play();}catch{updateMotionLabel();}}
-  if(content.heroVideo){motionButton.hidden=false;hero.poster='assets/hero-studio.webp';hero.addEventListener('loadeddata',()=>hero.classList.add('is-ready'));hero.addEventListener('play',updateMotionLabel);hero.addEventListener('pause',updateMotionLabel);hero.addEventListener('error',()=>{hero.classList.remove('is-ready');motionButton.hidden=true;});if(!reducedMotion.matches&&!navigator.connection?.saveData){lastHeroPermission=true;playHero();}}
-  motionButton.addEventListener('click',()=>{if(hero.paused)playHero(true);else{lastHeroPermission=false;hero.pause();}});
-  if('IntersectionObserver' in window){new IntersectionObserver(entries=>{heroInView=entries[0].isIntersecting;if(!heroInView)hero.pause();else if(lastHeroPermission&&!document.hidden&&!mediaDialog.open)playHero();},{threshold:.05}).observe($('.hero'));}
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)hero.pause();else if(lastHeroPermission&&heroInView&&!mediaDialog.open)playHero();});
-  mediaDialog.addEventListener('close',()=>{if(lastHeroPermission&&heroInView&&!document.hidden)playHero();});
-  reducedMotion.addEventListener('change',event=>{if(event.matches){lastHeroPermission=false;hero.pause();hero.classList.remove('user-play');}});
+  function updateMotionLabel(){if(!motionButton||!hero)return;const label=$('.motion-label',motionButton);const isPlaying=!hero.paused;text(label,isPlaying?{en:'Pause motion',ko:'영상 일시정지'}:{en:'Play motion',ko:'영상 재생'});$('.motion-icon',motionButton).textContent='';$('.motion-icon',motionButton).classList.toggle('is-playing',isPlaying);motionButton.setAttribute('aria-label',tr(isPlaying?{en:'Pause background motion',ko:'배경 영상 일시정지'}:{en:'Play background motion',ko:'배경 영상 재생'}));motionButton.setAttribute('aria-pressed',String(isPlaying));}
+  async function playHero(userInitiated=false){if(!hero||!content.heroVideo)return;if(userInitiated){lastHeroPermission=true;hero.classList.add('user-play');}if(!heroRequested){hero.src=content.heroVideo;heroRequested=true;hero.load();}try{await hero.play();}catch{updateMotionLabel();}}
+  if(hero&&motionButton&&content.heroVideo){
+    motionButton.hidden=false;hero.poster='assets/hero-studio.webp';hero.addEventListener('loadeddata',()=>hero.classList.add('is-ready'));hero.addEventListener('play',updateMotionLabel);hero.addEventListener('pause',updateMotionLabel);hero.addEventListener('error',()=>{hero.classList.remove('is-ready');motionButton.hidden=true;});if(!reducedMotion.matches&&!navigator.connection?.saveData){lastHeroPermission=true;playHero();}
+    motionButton.addEventListener('click',()=>{if(hero.paused)playHero(true);else{lastHeroPermission=false;hero.pause();}});
+    const heroSection=$('.hero');
+    if(heroSection&&'IntersectionObserver' in window){new IntersectionObserver(entries=>{heroInView=entries[0].isIntersecting;if(!heroInView)hero.pause();else if(lastHeroPermission&&!document.hidden&&!(mediaDialog&&mediaDialog.open))playHero();},{threshold:.05}).observe(heroSection);}
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)hero.pause();else if(lastHeroPermission&&heroInView&&!(mediaDialog&&mediaDialog.open))playHero();});
+    if(mediaDialog)mediaDialog.addEventListener('close',()=>{if(lastHeroPermission&&heroInView&&!document.hidden)playHero();});
+    reducedMotion.addEventListener('change',event=>{if(event.matches){lastHeroPermission=false;hero.pause();hero.classList.remove('user-play');}});
+  }
 
   // Native scrolling keeps the portraits sharp and the drag/swipe interaction
   // familiar. A decorative second run makes the wrap visually continuous.
@@ -217,7 +224,8 @@
     track.scrollBy({left:direction*galleryStep,behavior:reducedMotion.matches?'instant':'smooth'});
     galleryNavigationTimer=setTimeout(finishGalleryNavigation,600);
   }
-  galleryButton.addEventListener('click',()=>{
+  if(track){
+  galleryButton?.addEventListener('click',()=>{
     galleryWantsPlay=!galleryWantsPlay;
     if(galleryWantsPlay){finishGalleryNavigation();normalizeGalleryPosition();}
     reconcileGallery();
@@ -262,10 +270,11 @@
   window.addEventListener('resize',()=>{finishGalleryNavigation();measureGallery();},{passive:true});
   document.addEventListener('visibilitychange',reconcileGallery);
   window.addEventListener('blur',()=>{if(galleryDrag){galleryDrag=null;galleryPointer=false;track.classList.remove('is-dragging');pauseGalleryByUser();}});
-  [profileDialog,mediaDialog].forEach(dialog=>dialog.addEventListener('close',reconcileGallery));
+  [profileDialog,mediaDialog].forEach(dialog=>{if(dialog)dialog.addEventListener('close',reconcileGallery);});
   reducedMotion.addEventListener('change',event=>{if(event.matches)galleryWantsPlay=false;reconcileGallery();});
   if('IntersectionObserver' in window){
     new IntersectionObserver(entries=>{galleryInView=entries[0].isIntersecting;reconcileGallery();},{threshold:.08}).observe(track);
+  }
   }
 
   setLanguage('en');
