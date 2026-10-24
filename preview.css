@@ -213,3 +213,45 @@ h1[data-en],h2[data-en],h3[data-en],p[data-en],.hero-sub,.mosaic .yours small{wh
 .privacy-body p,.privacy-body li{color:var(--silver);font-size:15px;line-height:1.75}
 .privacy-body ul{margin:8px 0 0;padding-left:18px}
 .privacy-body a{border-bottom:1px solid rgba(255,255,255,.35)}
+
+/* Homepage hero: solid black nav band, video starts below it and fades into the page. */
+body.home{--nav-band:88px}
+@media(max-width:900px){body.home{--nav-band:78px}}
+@media(max-width:760px){body.home{--nav-band:75px}}
+body.home .site-header{
+  background-color:var(--ink);
+  background-image:none;
+  border-bottom-color:var(--ink);
+}
+body.home.menu-open .site-header{
+  background-color:#0b1422;
+  background-image:none;
+  border-bottom-color:#0b1422;
+}
+body.home .hero{background:var(--ink)}
+body.home .hero-poster,
+body.home .hero-video{
+  clip-path:inset(var(--nav-band) 0 0 0);
+}
+body.home .hero-poster img{background:transparent}
+body.home .hero-shade{
+  background:
+    linear-gradient(to bottom,var(--ink) 0,var(--ink) var(--nav-band),transparent calc(var(--nav-band) + 140px)),
+    linear-gradient(to top,var(--ink) 0,var(--ink) 12%,transparent 40%);
+}
+/* Between the phone layout and ~980px the hero is pinned to a tall min-height while the
+   video is letterboxed, so its picture ends higher. Bury that edge in the black fade. */
+@media(max-width:980px){
+  body.home .hero-shade{
+    background:
+      linear-gradient(to bottom,var(--ink) 0,var(--ink) var(--nav-band),transparent calc(var(--nav-band) + 150px)),
+      linear-gradient(to top,var(--ink) 0,var(--ink) 28%,transparent 54%);
+  }
+}
+@media(max-width:760px){
+  body.home .hero-shade{
+    background:
+      linear-gradient(to bottom,var(--ink) 0,var(--ink) var(--nav-band),transparent calc(var(--nav-band) + 110px)),
+      linear-gradient(to top,var(--ink) 0,var(--ink) 10%,transparent 36%);
+  }
+}
